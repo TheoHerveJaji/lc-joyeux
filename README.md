@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# LcJoyeux - Plateforme du Café Joyeux
 
-## Getting Started
+LcJoyeux est une plateforme web développée pour le Café Joyeux, une chaîne de restauration engagée dans l'insertion professionnelle des personnes en situation de handicap. Cette application permet d'afficher rapidement et efficacement le plat du jour et les événements à venir.
 
-First, run the development server:
+## Objectifs
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Afficher le plat du jour de manière claire et accessible
+- Permettre la mise à jour quotidienne du menu via une interface d'administration
+- Présenter les événements à venir (blind tests, animations, etc.)
+- Assurer une expérience utilisateur rapide et accessible
+- Respecter l'identité visuelle de la marque Café Joyeux
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Caractéristiques
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Interface épurée et intuitive
+- Mise à jour en temps réel du plat du jour
+- Affichage de la date de dernière mise à jour
+- Section événements pour les animations à venir
+- Design responsive et accessible
+- Respect de la charte graphique :
+  - Couleur principale : #ffc33e
+  - Police Helvetica pour les titres
+  - Police Gotham pour les paragraphes
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Technologies utilisées
 
-## Learn More
+- Next.js 14
+- React
+- TypeScript
+- Tailwind CSS
 
-To learn more about Next.js, take a look at the following resources:
+## Structure du projet
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `/app` - Pages et composants principaux
+- `/components` - Composants réutilisables
+- `/public` - Assets statiques (images, logos)
+- `/styles` - Styles globaux et configurations
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Accessibilité
 
-## Deploy on Vercel
+Le projet suit les normes WCAG 2.1 pour garantir une expérience accessible à tous les utilisateurs, notamment :
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Contraste suffisant
+- Navigation au clavier
+- Structure sémantique
+- Textes alternatifs pour les images
+- Support des lecteurs d'écran
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Contribution
+
+Les contributions sont les bienvenues ! N'hésitez pas à ouvrir une issue ou une pull request.
+
+## Licence
+
+Tous droits réservés - Théo HERVÉ
