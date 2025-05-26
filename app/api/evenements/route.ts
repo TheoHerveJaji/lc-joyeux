@@ -10,10 +10,7 @@ export async function GET() {
     });
     return NextResponse.json(events);
   } catch (error) {
-    return NextResponse.json(
-      { error: "Erreur lors de la récupération des événements" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error }, { status: 500 });
   }
 }
 
@@ -30,9 +27,6 @@ export async function POST(request: Request) {
     });
     return NextResponse.json(event);
   } catch (error) {
-    return NextResponse.json(
-      { error: "Erreur lors de la création de l'événement" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error }, { status: 500 });
   }
 }

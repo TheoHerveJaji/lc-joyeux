@@ -1,5 +1,16 @@
 {
     "cSpell.words": [
         "gotham"
+    ],
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "server": "db.zpccsetgtuktgoumbfgy.supabase.co",
+            "port": 5432,
+            "driver": "PostgreSQL",
+            "name": "LC-JOYEUX",
+            "database": "postgres",
+            "username": "postgres"
+        }
     ]
 }

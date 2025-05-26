@@ -23,12 +23,11 @@ export async function POST(request: Request) {
       );
     }
 
-    // Vérifier si un ancien menu existe et le supprimer
     try {
       await readFile(MENU_FILE_PATH);
       await unlink(MENU_FILE_PATH);
     } catch (error) {
-      // Ignorer l'erreur si le fichier n'existe pas
+      console.error("Erreur lors de la suppression du menu:", error);
     }
 
     const bytes = await file.arrayBuffer();
@@ -39,10 +38,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Erreur lors de l'upload du menu:", error);
-    return NextResponse.json(
-      { error: "Erreur lors de l'upload du menu" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error }, { status: 500 });
   }
 }
 
@@ -55,9 +51,6 @@ export async function GET() {
     });
   } catch (error) {
     console.error("Erreur lors de la récupération du menu:", error);
-    return NextResponse.json(
-      { error: "Erreur lors de la récupération du menu" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error }, { status: 500 });
   }
 }
