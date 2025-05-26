@@ -1,8 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
 
 const TAGS = ['Végétarien', 'Sans gluten', 'Vegan', 'Épicé'];
 
@@ -149,7 +147,7 @@ export default function AdminPage() {
               <p className="text-green-600 text-sm">Menu uploadé avec succès !</p>
             )}
             {uploadStatus === 'error' && (
-              <p className="text-red-600 text-sm">Erreur lors de l'upload du menu</p>
+              <p className="text-red-600 text-sm">Erreur lors de l&apos;upload du menu</p>
             )}
           </form>
         </section>
@@ -237,7 +235,7 @@ export default function AdminPage() {
           <form onSubmit={handleEventSubmit} className="space-y-4">
             <div>
               <label className="block font-gotham text-sm font-medium text-gray-700 mb-1">
-                Titre de l'event
+                Titre de l&apos;event
               </label>
               <input
                 type="text"
@@ -287,7 +285,7 @@ export default function AdminPage() {
               type="submit"
               className="w-full bg-cafe-joyeux text-white font-helvetica font-bold py-2 px-4 rounded-md hover:bg-yellow-500 transition-colors"
             >
-              Ajouter l'event
+              Ajouter l&apos;event
             </button>
           </form>
         </section>

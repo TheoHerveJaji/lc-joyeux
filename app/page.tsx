@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Calendar, Star, Users, Mail, Clock, PartyPopper } from 'lucide-react';
+import { Calendar, Clock } from 'lucide-react';
 import Image from 'next/image';
 
 interface Event {
@@ -14,8 +14,17 @@ interface Event {
   description: string;
 }
 
+interface PlatDuJour {
+  nom: string;
+  date: string;
+  updatedAt: string;
+  image?: string;
+  description: string;
+  tags?: string[];
+}
+
 export default function Home() {
-  const [platDuJour, setPlatDuJour] = useState<any>(null);
+  const [platDuJour, setPlatDuJour] = useState<PlatDuJour | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
   const [menuUrl, setMenuUrl] = useState<string | null>(null);
 
@@ -67,7 +76,7 @@ export default function Home() {
   if (!platDuJour || !platDuJour.nom || !platDuJour.updatedAt) {
     return (
       <main className="pt-20 flex items-center justify-center text-gray-400 font-gotham">
-        Aucun plat du jour n'est défini.
+        Aucun plat du jour n&apos;est défini.
       </main>
     );
   }

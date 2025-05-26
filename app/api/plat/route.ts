@@ -20,10 +20,7 @@ export async function GET() {
       }
     );
   } catch (error) {
-    return NextResponse.json(
-      { error: "Erreur lors de la récupération du plat" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error }, { status: 500 });
   }
 }
 
@@ -40,9 +37,6 @@ export async function POST(request: Request) {
     });
     return NextResponse.json(plat);
   } catch (error) {
-    return NextResponse.json(
-      { error: "Erreur lors de la création du plat" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error }, { status: 500 });
   }
 }
