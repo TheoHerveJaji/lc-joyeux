@@ -156,21 +156,18 @@ export default function Home() {
             <h3 className="font-helvetica text-2xl font-bold text-gray-900 mb-1">{platDuJour.nom}</h3>
             <p className="font-gotham text-gray-700 mb-3">{platDuJour.description}</p>
             <div className="flex gap-2 mb-3 flex-wrap">
-              {(platDuJour.tags || []).map((tag: string, i: number) => {
-                const category = categories.find(cat => cat.name === tag);
-                return (
-                  <span 
-                    key={i} 
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      tag === 'Végétarien' ? 'bg-green-100 text-green-800' : 
-                      tag === 'Sans gluten' ? 'bg-yellow-100 text-yellow-800' : 
-                      'bg-gray-100 text-gray-700'
-                    }`}
-                  >
-                    {tag}
-                  </span>
-                );
-              })}
+              {(platDuJour.tags || []).map((tag: string, i: number) => (
+                <span 
+                  key={i} 
+                  className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                    tag === 'Végétarien' ? 'bg-green-100 text-green-800' : 
+                    tag === 'Sans gluten' ? 'bg-yellow-100 text-yellow-800' : 
+                    'bg-gray-100 text-gray-700'
+                  }`}
+                >
+                  {tag}
+                </span>
+              ))}
             </div>
           </div>
         </div>
