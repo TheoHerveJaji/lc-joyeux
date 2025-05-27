@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Navigation from "./components/Navigation";
+import { Providers } from "./providers";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -21,8 +22,10 @@ export default function RootLayout({
         <link rel="icon" href="/cafe-joyeux.png" type="image/png" />
       </head>
       <body className={inter.className + " bg-gradient-to-b from-white via-yellow-50 to-yellow-100 overflow-x-hidden min-h-screen"}>
-        <Navigation />
-        {children}
+        <Providers>
+          <Navigation />
+          {children}
+        </Providers>
         <footer className="bg-gray-900 text-white py-10">
           <div className="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center md:items-start gap-8 px-4">
             <div>
