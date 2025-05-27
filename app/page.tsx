@@ -18,14 +18,20 @@ interface PlatDuJour {
   nom: string;
   date: string;
   updatedAt: string;
-  image?: string;
+  fileUrl?: string;
   description: string;
   tags?: string[];
+}
+
+interface Category {
+  id: number;
+  name: string;
 }
 
 export default function Home() {
   const [platDuJour, setPlatDuJour] = useState<PlatDuJour | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [menuUrl, setMenuUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -59,12 +65,29 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('/api/categories');
+        if (response.ok) {
+          const data = await response.json();
+          setCategories(data);
+        }
+      } catch (error) {
+        console.error('Erreur lors de la récupération des catégories:', error);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  useEffect(() => {
     const fetchMenu = async () => {
       try {
         const response = await fetch('/api/menu');
         if (response.ok) {
           const data = await response.json();
           setMenuUrl(data.url);
+        } else {
+          console.error('Erreur lors de la récupération du menu:', await response.text());
         }
       } catch (error) {
         console.error('Erreur lors de la récupération du menu:', error);
@@ -112,9 +135,16 @@ export default function Home() {
       <section className="max-w-4xl mx-auto px-2 md:px-0 mb-16">
         <div className="bg-white rounded-xl shadow-lg p-4 md:p-10 flex flex-col md:flex-row gap-8 items-stretch">
           <div className="flex flex-col gap-4 md:w-1/3">
-            {platDuJour.image ? (
-              <div className="aspect-square w-full rounded-xl bg-gray-200 flex items-center justify-center">
-                <Image src={platDuJour.image} alt={platDuJour.nom} width={200} height={200} className="object-cover rounded-xl" />
+            {platDuJour.fileUrl ? (
+              <div className="aspect-square w-full rounded-xl bg-gray-200 overflow-hidden">
+                <Image 
+                  src={platDuJour.fileUrl} 
+                  alt={platDuJour.nom} 
+                  width={400} 
+                  height={400} 
+                  className="w-full h-full object-cover"
+                  priority
+                />
               </div>
             ) : (
               <div className="aspect-square w-full rounded-xl bg-gray-100 flex items-center justify-center">
@@ -126,9 +156,21 @@ export default function Home() {
             <h3 className="font-helvetica text-2xl font-bold text-gray-900 mb-1">{platDuJour.nom}</h3>
             <p className="font-gotham text-gray-700 mb-3">{platDuJour.description}</p>
             <div className="flex gap-2 mb-3 flex-wrap">
-              {(platDuJour.tags || []).map((tag: string, i: number) => (
-                <span key={i} className={`px-3 py-1 rounded-full text-xs font-semibold ${tag === 'Végétarien' ? 'bg-green-100 text-green-800' : tag === 'Sans gluten' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-700'}`}>{tag}</span>
-              ))}
+              {(platDuJour.tags || []).map((tag: string, i: number) => {
+                const category = categories.find(cat => cat.name === tag);
+                return (
+                  <span 
+                    key={i} 
+                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                      tag === 'Végétarien' ? 'bg-green-100 text-green-800' : 
+                      tag === 'Sans gluten' ? 'bg-yellow-100 text-yellow-800' : 
+                      'bg-gray-100 text-gray-700'
+                    }`}
+                  >
+                    {tag}
+                  </span>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -180,16 +222,28 @@ export default function Home() {
       {menuUrl && (
         <section className="max-w-4xl mx-auto px-2 md:px-0 mb-16 pt-8">
           <div className="bg-white rounded-xl shadow-lg p-4 md:p-10">
-            <div className="flex items-center gap-2 mb-6">
-              <h2 className="font-helvetica text-2xl font-bold text-cafe-joyeux">Menu de la Semaine</h2>
-              <span className="text-2xl">📋</span>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2">
+                <h2 className="font-helvetica text-2xl font-bold text-cafe-joyeux">Menu de la Semaine</h2>
+                <span className="text-2xl">📋</span>
+              </div>
+              <a
+                href={menuUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2 bg-cafe-joyeux text-white rounded-lg hover:bg-cafe-joyeux/90 transition-colors"
+              >
+                Télécharger le menu
+              </a>
             </div>
-            <div className="aspect-[3/4] w-full">
-              <iframe
-                src={menuUrl}
-                className="w-full h-full rounded-lg border-2 border-gray-200"
-                title="Menu de la semaine"
-              />
+            <div className="flex flex-col items-center">
+              <div className="w-full max-w-2xl">
+                <iframe
+                  src={`${menuUrl}#toolbar=0&navpanes=0`}
+                  className="w-full h-[800px] border-0 shadow-lg"
+                  title="Menu de la semaine"
+                />
+              </div>
             </div>
           </div>
         </section>

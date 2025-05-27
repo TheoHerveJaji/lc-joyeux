@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
-import { writeFile, readFile, unlink } from "fs/promises";
+import { prisma } from "@/lib/prisma";
+import { writeFile } from "fs/promises";
 import { join } from "path";
-
-const MENU_FILE_PATH = join(process.cwd(), "public", "menu.pdf");
 
 export async function POST(request: Request) {
   try {
@@ -16,41 +15,70 @@ export async function POST(request: Request) {
       );
     }
 
-    if (file.type !== "application/pdf") {
-      return NextResponse.json(
-        { error: "Le fichier doit être un PDF" },
-        { status: 400 }
-      );
-    }
+    console.log("Type de fichier reçu:", file.type);
+    console.log("Taille du fichier:", file.size);
 
-    try {
-      await readFile(MENU_FILE_PATH);
-      await unlink(MENU_FILE_PATH);
-    } catch (error) {
-      console.error("Erreur lors de la suppression du menu:", error);
-    }
+    // Supprimer l'ancien menu s'il existe
+    await prisma.menu.deleteMany();
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    // Créer un nom de fichier unique
+    const timestamp = Date.now();
+    const fileName = `menu_${timestamp}.pdf`;
+    const filePath = join(process.cwd(), "public", "menus", fileName);
 
-    await writeFile(MENU_FILE_PATH, buffer);
+    // Convertir le fichier en buffer et l'écrire dans le dossier public
+    const buffer = await file.arrayBuffer();
+    await writeFile(filePath, Buffer.from(buffer));
 
-    return NextResponse.json({ success: true });
+    // Créer l'entrée dans la base de données
+    const menu = await prisma.menu.create({
+      data: {
+        fileUrl: `/menus/${fileName}`,
+        fileName: file.name,
+        fileType: file.type,
+      },
+    });
+
+    console.log("Menu créé dans la base de données:", menu);
+
+    return NextResponse.json({
+      success: true,
+      id: menu.id,
+      url: `/menus/${fileName}`,
+    });
   } catch (error) {
-    console.error("Erreur lors de l'upload du menu:", error);
-    return NextResponse.json({ error: error }, { status: 500 });
+    console.error("Erreur détaillée lors de l'upload du menu:", error);
+    return NextResponse.json(
+      {
+        error: "Erreur lors de l'upload du menu",
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 }
+    );
   }
 }
 
 export async function GET() {
   try {
-    const fileExists = await readFile(MENU_FILE_PATH).catch(() => null);
-    return NextResponse.json({
-      exists: !!fileExists,
-      url: fileExists ? "/menu.pdf" : null,
+    const menu = await prisma.menu.findFirst({
+      orderBy: {
+        createdAt: "desc",
+      },
     });
+
+    if (!menu) {
+      return NextResponse.json({ error: "Aucun menu trouvé" }, { status: 404 });
+    }
+
+    return NextResponse.json({ url: menu.fileUrl });
   } catch (error) {
-    console.error("Erreur lors de la récupération du menu:", error);
-    return NextResponse.json({ error: error }, { status: 500 });
+    console.error("Erreur détaillée lors de la récupération du menu:", error);
+    return NextResponse.json(
+      {
+        error: "Erreur lors de la récupération du menu",
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 }
+    );
   }
 }

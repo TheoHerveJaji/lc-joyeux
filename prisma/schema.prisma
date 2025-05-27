@@ -65,7 +65,9 @@ model Plat {
   nom         String
   description String
   tags        String[]
-  image       String?
+  fileUrl     String?  // URL de l'image
+  fileName    String?  // Nom du fichier
+  fileType    String?  // Type du fichier
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -76,6 +78,22 @@ model Event {
   date        DateTime
   heure       String
   description String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Category {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Menu {
+  id          Int      @id @default(autoincrement())
+  fileUrl     String   // URL Cloudinary du PDF
+  fileName    String
+  fileType    String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
