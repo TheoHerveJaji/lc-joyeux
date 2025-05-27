@@ -3,9 +3,21 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { Adapter } from "next-auth/adapters";
+
+// Type personnalisé pour l'utilisateur
+interface CustomUser {
+  id: string;
+  email: string;
+  name: string | null;
+  role: string;
+  password: string;
+  emailVerified: Date | null;
+  image: string | null;
+}
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma) as any,
+  adapter: PrismaAdapter(prisma) as Adapter,
   providers: [
     CredentialsProvider({
       name: "credentials",
@@ -18,11 +30,11 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Email et mot de passe requis");
         }
 
-        const user = await prisma.user.findUnique({
+        const user = (await prisma.user.findUnique({
           where: {
             email: credentials.email,
           },
-        });
+        })) as CustomUser | null;
 
         if (!user || !user?.password) {
           throw new Error("Email non trouvé");

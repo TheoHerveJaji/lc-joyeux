@@ -3,6 +3,13 @@ import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
+type UserCreateData = {
+  email: string;
+  password: string;
+  name: string;
+  role: string;
+};
+
 async function createAdmin() {
   const email = "admin@cafejoyeux.com";
   const password = "admin123"; // À changer en production !
@@ -23,13 +30,15 @@ async function createAdmin() {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Créer l'utilisateur admin
+    const userData: UserCreateData = {
+      email,
+      password: hashedPassword,
+      name,
+      role: "ADMIN",
+    };
+
     const admin = await prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        name,
-        role: "ADMIN",
-      },
+      data: userData,
     });
 
     console.log("Utilisateur admin créé avec succès !");
