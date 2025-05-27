@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { writeFile } from "fs/promises";
+import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
+import { existsSync } from "fs";
 
 export async function POST(request: Request) {
   try {
@@ -24,11 +25,17 @@ export async function POST(request: Request) {
     // Créer un nom de fichier unique
     const timestamp = Date.now();
     const fileName = `menu_${timestamp}.pdf`;
-    const filePath = join(process.cwd(), "public", "menus", fileName);
+    const menusDir = join(process.cwd(), "public", "menus");
+    const filePath = join(menusDir, fileName);
+
+    // Créer le dossier menus s'il n'existe pas
+    if (!existsSync(menusDir)) {
+      await mkdir(menusDir, { recursive: true });
+    }
 
     // Convertir le fichier en buffer et l'écrire dans le dossier public
     const buffer = await file.arrayBuffer();
-    await writeFile(filePath, Buffer.from(buffer));
+    await writeFile(filePath, new Uint8Array(buffer));
 
     // Créer l'entrée dans la base de données
     const menu = await prisma.menu.create({
