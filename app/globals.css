@@ -2,6 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Styles pour react-pdf */
+.react-pdf__Document {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.react-pdf__Page {
+  margin-bottom: 1rem;
+}
+
+.react-pdf__Page canvas {
+  max-width: 100%;
+  height: auto !important;
+}
+
 @keyframes wiggle {
   0%, 100% { transform: rotate(-8deg); }
   50% { transform: rotate(8deg); }

@@ -4,9 +4,7 @@ import { useEffect, useState } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
-const TAGS = ['Végétarien', 'Sans gluten', 'Vegan', 'Épicé'];
-
-type Tab = 'menu' | 'plat' | 'event';
+type Tab = 'menu' | 'plat' | 'event' | 'categories';
 
 export default function AdminPage() {
   const { data: session, status } = useSession();
@@ -17,7 +15,7 @@ export default function AdminPage() {
     nom: '',
     description: '',
     tags: [] as string[],
-    image: '',
+    image: null as File | null,
   });
 
   const [event, setEvent] = useState({
@@ -29,6 +27,8 @@ export default function AdminPage() {
 
   const [menuFile, setMenuFile] = useState<File | null>(null);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
+  const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
+  const [newCategory, setNewCategory] = useState('');
 
   // Redirection si pas connecté ou pas admin
   useEffect(() => {
@@ -53,8 +53,26 @@ export default function AdminPage() {
     fetchPlat();
   }, []);
 
+  // Charger les catégories au montage
+  useEffect(() => {
+    const fetchCategories = async () => {
+      const response = await fetch('/api/categories');
+      if (response.ok) {
+        const data = await response.json();
+        setCategories(data);
+      }
+    };
+    fetchCategories();
+  }, []);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setPlat({ ...plat, [e.target.name]: e.target.value });
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setPlat({ ...plat, image: e.target.files[0] });
+    }
   };
 
   const handleTagToggle = (tag: string) => {
@@ -68,15 +86,27 @@ export default function AdminPage() {
 
   const handlePlatSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const formData = new FormData();
+    formData.append("nom", plat.nom);
+    formData.append("description", plat.description);
+    formData.append("tags", JSON.stringify(plat.tags));
+    if (plat.image) {
+      formData.append("file", plat.image);
+    }
+
     const response = await fetch('/api/plat', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(plat),
+      body: formData,
     });
+
     if (response.ok) {
       alert('Plat du jour mis à jour avec succès !');
+      setPlat({
+        nom: '',
+        description: '',
+        tags: [],
+        image: null,
+      });
     }
   };
 
@@ -128,6 +158,35 @@ export default function AdminPage() {
 
   const handleLogout = async () => {
     await signOut({ callbackUrl: '/' });
+  };
+
+  const handleAddCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCategory.trim()) return;
+
+    const response = await fetch('/api/categories', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name: newCategory }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      setCategories([...categories, data]);
+      setNewCategory('');
+    }
+  };
+
+  const handleDeleteCategory = async (id: number) => {
+    const response = await fetch(`/api/categories/${id}`, {
+      method: 'DELETE',
+    });
+
+    if (response.ok) {
+      setCategories(categories.filter(cat => cat.id !== id));
+    }
   };
 
   if (status === 'loading') {
@@ -194,6 +253,16 @@ export default function AdminPage() {
             }`}
           >
             Événements
+          </button>
+          <button
+            onClick={() => setActiveTab('categories')}
+            className={`px-6 py-3 font-helvetica font-semibold transition-colors border-b-2 ${
+              activeTab === 'categories'
+                ? 'text-cafe-joyeux border-cafe-joyeux'
+                : 'text-gray-600 border-transparent hover:text-gray-800'
+            }`}
+          >
+            Catégories
           </button>
         </div>
 
@@ -274,37 +343,45 @@ export default function AdminPage() {
                 </div>
                 <div>
                   <label className="block font-gotham text-sm font-medium text-gray-700 mb-1">
-                    Tags
+                    Catégories
                   </label>
                   <div className="flex gap-2 flex-wrap">
-                    {TAGS.map((tag) => (
+                    {categories.map((category) => (
                       <button
                         type="button"
-                        key={tag}
-                        onClick={() => handleTagToggle(tag)}
+                        key={category.id}
+                        onClick={() => handleTagToggle(category.name)}
                         className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
-                          plat.tags.includes(tag)
+                          plat.tags.includes(category.name)
                             ? 'bg-cafe-joyeux text-black border-cafe-joyeux'
                             : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-yellow-50'
                         }`}
                       >
-                        {tag}
+                        {category.name}
                       </button>
                     ))}
                   </div>
                 </div>
                 <div>
                   <label className="block font-gotham text-sm font-medium text-gray-700 mb-1">
-                    Image (URL ou laisser vide)
+                    Image du plat
                   </label>
                   <input
-                    type="text"
-                    name="image"
-                    value={plat.image}
-                    onChange={handleChange}
-                    className="w-full p-2 border border-gray-300 rounded-md font-gotham"
-                    placeholder="https://..."
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="w-full p-2 border border-gray-300 rounded-md font-gotham
+                      file:mr-4 file:py-2 file:px-4
+                      file:rounded-full file:border-0
+                      file:text-sm file:font-semibold
+                      file:bg-cafe-joyeux file:text-white
+                      hover:file:bg-cafe-joyeux/90"
                   />
+                  {plat.image && (
+                    <p className="mt-2 text-sm text-gray-500">
+                      Image sélectionnée : {plat.image.name}
+                    </p>
+                  )}
                 </div>
                 <button
                   type="submit"
@@ -378,6 +455,55 @@ export default function AdminPage() {
                   Ajouter l&apos;événement
                 </button>
               </form>
+            </section>
+          )}
+
+          {/* Onglet Catégories */}
+          {activeTab === 'categories' && (
+            <section>
+              <h2 className="font-helvetica text-2xl font-bold mb-4">
+                Gérer les Catégories
+              </h2>
+              <form onSubmit={handleAddCategory} className="space-y-4 mb-6">
+                <div>
+                  <label className="block font-gotham text-sm font-medium text-gray-700 mb-1">
+                    Nouvelle catégorie
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newCategory}
+                      onChange={(e) => setNewCategory(e.target.value)}
+                      className="flex-1 p-2 border border-gray-300 rounded-md font-gotham"
+                      placeholder="Nom de la catégorie"
+                      required
+                    />
+                    <button
+                      type="submit"
+                      className="bg-cafe-joyeux text-white font-helvetica font-bold py-2 px-4 rounded-md hover:bg-yellow-500 transition-colors"
+                    >
+                      Ajouter
+                    </button>
+                  </div>
+                </div>
+              </form>
+
+              <div className="space-y-2">
+                {categories.map((category) => (
+                  <div
+                    key={category.id}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-md"
+                  >
+                    <span className="font-gotham">{category.name}</span>
+                    <button
+                      onClick={() => handleDeleteCategory(category.id)}
+                      className="text-red-500 hover:text-red-700 font-helvetica font-semibold"
+                    >
+                      Supprimer
+                    </button>
+                  </div>
+                ))}
+              </div>
             </section>
           )}
         </div>
