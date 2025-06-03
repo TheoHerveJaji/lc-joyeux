@@ -23,11 +23,11 @@ export default function Navigation() {
   const adminHref = session ? '/administration' : '/login';
 
   return (
-    <nav className={`w-full transition-shadow duration-300 z-50 sticky top-0 bg-transparent backdrop-blur-md ${scrolled ? 'shadow-2xl shadow-yellow-300/40' : 'shadow-sm'}`} style={{height: 80}}>
+    <nav className={`w-full transition-shadow duration-300 z-50 sticky top-0 bg-[#FCC000] ${scrolled ? 'shadow-2xl shadow-yellow-300/40' : 'shadow-sm'}`} style={{height: 80}}>
       <div className="max-w-7xl mx-auto px-6 flex justify-between items-center h-20">
         <div className="flex items-center gap-3">
           <Link href="/" className="flex items-center gap-3">
-            <Image src="/cafe-joyeux.png" alt="Logo Café Joyeux" width={56} height={56} priority />
+            <Image src="/cafe-joyeux.svg" alt="Logo Café Joyeux" width={56} height={56} priority />
             <span className="font-helvetica text-3xl font-bold text-black">Café Joyeux</span>
           </Link>
         </div>

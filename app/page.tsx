@@ -98,20 +98,28 @@ export default function Home() {
 
   if (!platDuJour || !platDuJour.nom || !platDuJour.updatedAt) {
     return (
-      <main className="pt-20 flex items-center justify-center text-gray-400 font-gotham">
-        Aucun plat du jour n&apos;est défini.
+      <main className="flex-1 flex items-center justify-center py-20">
+        <div className="text-center space-y-4 px-4 max-w-lg mx-auto">
+          <div className="text-6xl mb-4 animate-bounce-slow">🍽️</div>
+          <h2 className="font-helvetica text-2xl md:text-3xl font-bold text-gray-800">
+            Aucun plat du jour n&apos;est défini
+          </h2>
+          <p className="font-gotham text-gray-600">
+            Nous sommes désolés, il n&apos;y a pas de plat du jour disponible pour le moment. Veuillez réessayer plus tard.
+          </p>
+        </div>
       </main>
     );
   }
 
   return (
-    <main className="overflow-x-hidden pt-8">
+    <main className="flex-1 overflow-x-hidden pt-8">
       {/* Motif festif en fond */}
-      <div className="pointer-events-none select-none absolute inset-0 z-0">
+      {/* <div className="pointer-events-none select-none absolute inset-0 z-0">
         <div className="absolute top-0 left-0 w-72 h-72 bg-pink-200 rounded-full blur-3xl opacity-40 animate-bounce-slow" />
         <div className="absolute bottom-0 right-0 w-96 h-96 bg-cafe-joyeux rounded-full blur-3xl opacity-30 animate-pulse-slow" />
         <div className="absolute top-1/2 left-1/2 w-40 h-40 bg-green-200 rounded-full blur-2xl opacity-30 animate-float" />
-      </div>
+      </div> */}
 
       {/* Séparateur festif */}
       <div className="flex items-center gap-2 justify-center z-10 relative">
@@ -133,7 +141,7 @@ export default function Home() {
 
       {/* Card plat du jour */}
       <section className="max-w-4xl mx-auto px-2 md:px-0 mb-16">
-        <div className="bg-white rounded-xl shadow-lg p-4 md:p-10 flex flex-col md:flex-row gap-8 items-stretch">
+        <div className="bg-white border-2 border-cafe-joyeux rounded-xl shadow-lg p-4 md:p-10 flex flex-col md:flex-row gap-8 items-stretch">
           <div className="flex flex-col gap-4 md:w-1/3">
             {platDuJour.fileUrl ? (
               <div className="aspect-square w-full rounded-xl bg-gray-200 overflow-hidden">
@@ -173,13 +181,13 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Événements Section */}
+      {/* Offres Section */}
       {events.length > 0 && (
         <section className="py-8 px-4 sm:px-6 lg:px-8 bg-white/80 z-10 relative">
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-10">
               <h2 className="font-helvetica text-3xl font-bold text-pink-500 mb-2 animate-fade-in">
-                <span className="inline-flex items-center gap-2"><span className="text-3xl">🎉</span> Prochains Événements</span>
+                <span className="inline-flex items-center gap-2"><span className="text-3xl">🎉</span> Offres du moment</span>
               </h2>
               <p className="font-gotham text-lg text-gray-600">
                 Rejoignez-nous pour des moments inoubliables
@@ -188,21 +196,16 @@ export default function Home() {
 
             <div className="grid md:grid-cols-2 gap-8">
               {events.map((event) => (
-                <div key={event.id} className="bg-gradient-to-br from-pink-100 via-white to-yellow-100 rounded-3xl shadow-2xl overflow-hidden hover:shadow-3xl transition-shadow flex flex-col md:flex-row items-stretch border-2 border-pink-200/40 animate-pop">
-                  <div className="md:w-1/3 flex items-center justify-center bg-pink-100">
-                    <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-white flex items-center justify-center text-pink-400 text-4xl font-bold shadow-inner border-4 border-cafe-joyeux/20">
-                      🎤
-                    </div>
-                  </div>
+                <div key={event.id} className="bg-gradient-to-br from-white via-white to-yellow-100 rounded-3xl shadow-2xl overflow-hidden hover:shadow-3xl transition-shadow flex flex-col md:flex-row items-stretch border-2 border-cafe-joyeux animate-pop">
                   <div className="flex-1 p-6 flex flex-col justify-center">
                     <div className="flex items-center gap-2 mb-2">
-                      <Calendar className="w-5 h-5 text-pink-400" />
-                      <span className="font-gotham text-pink-500 font-medium text-sm bg-pink-50 px-3 py-1 rounded-full border border-pink-200/40">
+                      <Calendar className="w-5 h-5 text-cafe-joyeux" />
+                      <span className="flex items-center gap-1 font-gotham font-medium text-sm bg-white px-3 py-1 rounded-full border border-cafe-joyeux">
                         {format(new Date(event.date), "EEEE d MMMM", { locale: fr })} <Clock className="inline w-4 h-4 ml-1" /> {event.heure}
                       </span>
                     </div>
                     <h3 className="font-helvetica text-xl font-bold text-gray-900 mb-2">
-                      {event.titre} <span className="ml-2 animate-wiggle">🥳</span>
+                      {event.titre}
                     </h3>
                     <p className="font-gotham text-gray-600 mb-4">
                       {event.description}
@@ -218,7 +221,7 @@ export default function Home() {
       {/* Section Menu de la Semaine */}
       {menuUrl && (
         <section className="max-w-4xl mx-auto px-2 md:px-0 mb-16 pt-8">
-          <div className="bg-white rounded-xl shadow-lg p-4 md:p-10">
+          <div className="bg-white border-2 border-cafe-joyeux rounded-xl shadow-lg p-4 md:p-10">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2">
                 <h2 className="font-helvetica text-2xl font-bold text-cafe-joyeux">Menu de la Semaine</h2>
