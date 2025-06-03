@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
-import { existsSync } from "fs";
+import { v2 as cloudinary } from "cloudinary";
+
+// Configuration de Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 export async function POST(request: Request) {
   try {
@@ -22,25 +27,23 @@ export async function POST(request: Request) {
     // Supprimer l'ancien menu s'il existe
     await prisma.menu.deleteMany();
 
-    // Créer un nom de fichier unique
-    const timestamp = Date.now();
-    const fileName = `menu_${timestamp}.pdf`;
-    const menusDir = join(process.cwd(), "public", "menus");
-    const filePath = join(menusDir, fileName);
-
-    // Créer le dossier menus s'il n'existe pas
-    if (!existsSync(menusDir)) {
-      await mkdir(menusDir, { recursive: true });
-    }
-
-    // Convertir le fichier en buffer et l'écrire dans le dossier public
+    // Convertir le fichier en buffer
     const buffer = await file.arrayBuffer();
-    await writeFile(filePath, new Uint8Array(buffer));
+    const base64String = Buffer.from(buffer).toString("base64");
+    const dataURI = `data:${file.type};base64,${base64String}`;
+
+    // Upload vers Cloudinary
+    const uploadResponse = await cloudinary.uploader.upload(dataURI, {
+      folder: "menus",
+      resource_type: "auto",
+      type: "upload",
+      format: "pdf",
+    });
 
     // Créer l'entrée dans la base de données
     const menu = await prisma.menu.create({
       data: {
-        fileUrl: `/menus/${fileName}`,
+        fileUrl: uploadResponse.secure_url,
         fileName: file.name,
         fileType: file.type,
       },
@@ -51,7 +54,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       id: menu.id,
-      url: `/menus/${fileName}`,
+      url: uploadResponse.secure_url,
     });
   } catch (error) {
     console.error("Erreur détaillée lors de l'upload du menu:", error);

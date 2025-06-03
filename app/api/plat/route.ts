@@ -3,6 +3,14 @@ import { prisma } from "@/lib/prisma";
 import { writeFile, unlink } from "fs/promises";
 import { join } from "path";
 import { existsSync } from "fs";
+import { v2 as cloudinary } from "cloudinary";
+
+// Configuration de Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 export async function GET() {
   try {
@@ -49,7 +57,7 @@ export async function POST(request: Request) {
     });
 
     if (oldPlat?.fileUrl) {
-      // Supprimer l'ancienne image
+      // Supprimer l'ancienne image locale (optionnel, car on passe sur Cloudinary)
       const oldImagePath = join(process.cwd(), "public", oldPlat.fileUrl);
       if (existsSync(oldImagePath)) {
         await unlink(oldImagePath);
@@ -61,15 +69,17 @@ export async function POST(request: Request) {
     let fileType = null;
 
     if (file) {
-      // Créer un nom de fichier unique
-      const timestamp = Date.now();
-      fileName = `plat_${timestamp}.${file.type.split("/")[1]}`;
-      const filePath = join(process.cwd(), "public", "plats", fileName);
-
-      // Convertir le fichier en buffer et l'écrire dans le dossier public
+      // Upload sur Cloudinary
       const buffer = await file.arrayBuffer();
-      await writeFile(filePath, new Uint8Array(buffer));
-      fileUrl = `/plats/${fileName}`;
+      const base64String = Buffer.from(buffer).toString("base64");
+      const dataURI = `data:${file.type};base64,${base64String}`;
+      const uploadResponse = await cloudinary.uploader.upload(dataURI, {
+        folder: "plats",
+        resource_type: "image",
+        type: "upload",
+      });
+      fileUrl = uploadResponse.secure_url;
+      fileName = file.name;
       fileType = file.type;
     }
 
