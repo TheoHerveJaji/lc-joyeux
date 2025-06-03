@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { Settings } from 'lucide-react';
 
 type Tab = 'menu' | 'plat' | 'event' | 'categories';
 
@@ -296,11 +297,14 @@ export default function AdminPage() {
         {/* Header avec titre et bouton déconnexion */}
         <div className="flex justify-between items-center mb-8">
           <h1 className="font-helvetica text-3xl font-bold">
-            Administration
+            <span className="hidden md:inline">Administration</span>
+            <span className="md:hidden flex items-center gap-2">
+              <Settings className="w-6 h-6" />
+            </span>
           </h1>
           <div className="flex items-center gap-4">
             <span className="text-sm text-gray-600">
-              Connecté en tant que: <strong>{session.user.name}</strong>
+              Bonjour <strong>{session.user.name}</strong>
             </span>
             <button
               onClick={handleLogout}
@@ -312,7 +316,7 @@ export default function AdminPage() {
         </div>
 
         {/* Onglets */}
-        <div className="flex border-b border-gray-200 mb-6">
+        <div className="flex border-b border-gray-200 mb-6 overflow-x-auto whitespace-nowrap w-full scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
           <button
             onClick={() => setActiveTab('menu')}
             className={`px-6 py-3 font-helvetica font-semibold transition-colors border-b-2 ${
