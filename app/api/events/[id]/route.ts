@@ -1,15 +1,20 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(request: NextRequest) {
   try {
+    const { pathname } = request.nextUrl;
+    const id = pathname.split("/").pop();
+
+    if (!id) {
+      return NextResponse.json({ error: "ID manquant" }, { status: 400 });
+    }
+
     const data = await request.json();
+
     const event = await prisma.event.update({
       where: {
-        id: parseInt(params.id),
+        id: parseInt(id),
       },
       data: {
         titre: data.titre,
@@ -18,24 +23,32 @@ export async function PUT(
         description: data.description,
       },
     });
+
     return NextResponse.json(event);
   } catch (error) {
-    return NextResponse.json({ error: error }, { status: 500 });
+    console.error(error);
+    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest) {
   try {
+    const { pathname } = request.nextUrl;
+    const id = pathname.split("/").pop();
+
+    if (!id) {
+      return NextResponse.json({ error: "ID manquant" }, { status: 400 });
+    }
+
     await prisma.event.delete({
       where: {
-        id: parseInt(params.id),
+        id: parseInt(id),
       },
     });
+
     return NextResponse.json({ success: true });
   } catch (error) {
-    return NextResponse.json({ error: error }, { status: 500 });
+    console.error(error);
+    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }

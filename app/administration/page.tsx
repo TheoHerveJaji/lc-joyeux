@@ -33,6 +33,8 @@ export default function AdminPage() {
     description: string;
   }>>([]);
   const [editingEvent, setEditingEvent] = useState<number | null>(null);
+  const [eventStatus, setEventStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [eventMessage, setEventMessage] = useState('');
 
   const [menuFile, setMenuFile] = useState<File | null>(null);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
@@ -133,6 +135,7 @@ export default function AdminPage() {
 
   const handleEventSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setEventStatus('idle');
     const response = await fetch('/api/events', {
       method: 'POST',
       headers: {
@@ -149,7 +152,11 @@ export default function AdminPage() {
         heure: '',
         description: '',
       });
-      alert('Event ajouté avec succès !');
+      setEventStatus('success');
+      setEventMessage('Événement ajouté avec succès !');
+    } else {
+      setEventStatus('error');
+      setEventMessage('Erreur lors de l\'ajout de l\'événement');
     }
   };
 
@@ -166,6 +173,7 @@ export default function AdminPage() {
   const handleUpdateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingEvent) return;
+    setEventStatus('idle');
 
     const response = await fetch(`/api/events/${editingEvent}`, {
       method: 'PUT',
@@ -185,12 +193,17 @@ export default function AdminPage() {
         description: '',
       });
       setEditingEvent(null);
-      alert('Event modifié avec succès !');
+      setEventStatus('success');
+      setEventMessage('Événement modifié avec succès !');
+    } else {
+      setEventStatus('error');
+      setEventMessage('Erreur lors de la modification de l\'événement');
     }
   };
 
   const handleDeleteEvent = async (id: number) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer cet événement ?')) return;
+    setEventStatus('idle');
 
     const response = await fetch(`/api/events/${id}`, {
       method: 'DELETE',
@@ -198,7 +211,11 @@ export default function AdminPage() {
 
     if (response.ok) {
       setEvents(events.filter(e => e.id !== id));
-      alert('Event supprimé avec succès !');
+      setEventStatus('success');
+      setEventMessage('Événement supprimé avec succès !');
+    } else {
+      setEventStatus('error');
+      setEventMessage('Erreur lors de la suppression de l\'événement');
     }
   };
 
@@ -355,9 +372,19 @@ export default function AdminPage() {
                     type="file"
                     accept=".pdf"
                     onChange={(e) => setMenuFile(e.target.files?.[0] || null)}
-                    className="w-full p-2 border border-gray-300 rounded-md font-gotham"
+                    className="w-full p-2 border border-gray-300 rounded-md font-gotham
+                      file:mr-4 file:py-2 file:px-4
+                      file:rounded-full file:border-0
+                      file:text-sm file:font-semibold
+                      file:bg-cafe-joyeux file:text-white
+                      hover:file:bg-cafe-joyeux/90"
                     required
                   />
+                  {menuFile && (
+                    <p className="mt-2 text-sm text-gray-500">
+                      Fichier sélectionné : {menuFile.name}
+                    </p>
+                  )}
                 </div>
                 <button
                   type="submit"
@@ -371,7 +398,7 @@ export default function AdminPage() {
                   {uploadStatus === 'uploading' ? 'Upload en cours...' : 'Uploader le menu'}
                 </button>
                 {uploadStatus === 'success' && (
-                  <p className="text-green-600 text-sm">Menu uploadé avec succès !</p>
+                  <p className="text-green-600 text-sm">Menu enregistré avec succès !</p>
                 )}
                 {uploadStatus === 'error' && (
                   <p className="text-red-600 text-sm">Erreur lors de l&apos;upload du menu</p>
@@ -538,6 +565,7 @@ export default function AdminPage() {
                           heure: '',
                           description: '',
                         });
+                        setEventStatus('idle');
                       }}
                       className="bg-gray-500 text-white font-helvetica font-bold py-2 px-4 rounded-md hover:bg-gray-600 transition-colors"
                     >
@@ -545,6 +573,12 @@ export default function AdminPage() {
                     </button>
                   )}
                 </div>
+                {eventStatus === 'success' && (
+                  <p className="text-green-600 text-sm">{eventMessage}</p>
+                )}
+                {eventStatus === 'error' && (
+                  <p className="text-red-600 text-sm">{eventMessage}</p>
+                )}
               </form>
 
               {/* Liste des événements */}
