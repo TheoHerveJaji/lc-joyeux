@@ -140,7 +140,7 @@ export default function Home() {
       </section>
 
       {/* Card plat du jour */}
-      <section className="max-w-4xl mx-auto px-2 md:px-0 mb-16">
+      <section className="max-w-4xl mx-auto px-2 md:px-0">
         <div className="bg-white border-2 border-cafe-joyeux rounded-xl shadow-lg p-4 md:p-10 flex flex-col md:flex-row gap-8 items-stretch">
           <div className="flex flex-col gap-4 md:w-1/3">
             {platDuJour.fileUrl ? (

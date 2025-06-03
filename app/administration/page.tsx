@@ -25,6 +25,15 @@ export default function AdminPage() {
     description: '',
   });
 
+  const [events, setEvents] = useState<Array<{
+    id: number;
+    titre: string;
+    date: string;
+    heure: string;
+    description: string;
+  }>>([]);
+  const [editingEvent, setEditingEvent] = useState<number | null>(null);
+
   const [menuFile, setMenuFile] = useState<File | null>(null);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
@@ -63,6 +72,18 @@ export default function AdminPage() {
       }
     };
     fetchCategories();
+  }, []);
+
+  // Charger les événements au montage
+  useEffect(() => {
+    const fetchEvents = async () => {
+      const response = await fetch('/api/events');
+      if (response.ok) {
+        const data = await response.json();
+        setEvents(data);
+      }
+    };
+    fetchEvents();
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -120,13 +141,64 @@ export default function AdminPage() {
       body: JSON.stringify(event),
     });
     if (response.ok) {
-      alert('Event ajouté avec succès !');
+      const newEvent = await response.json();
+      setEvents([...events, newEvent]);
       setEvent({
         titre: '',
         date: '',
         heure: '',
         description: '',
       });
+      alert('Event ajouté avec succès !');
+    }
+  };
+
+  const handleEditEvent = (eventToEdit: typeof events[0]) => {
+    setEditingEvent(eventToEdit.id);
+    setEvent({
+      titre: eventToEdit.titre,
+      date: eventToEdit.date.split('T')[0],
+      heure: eventToEdit.heure,
+      description: eventToEdit.description,
+    });
+  };
+
+  const handleUpdateEvent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingEvent) return;
+
+    const response = await fetch(`/api/events/${editingEvent}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(event),
+    });
+
+    if (response.ok) {
+      const updatedEvent = await response.json();
+      setEvents(events.map(e => e.id === editingEvent ? updatedEvent : e));
+      setEvent({
+        titre: '',
+        date: '',
+        heure: '',
+        description: '',
+      });
+      setEditingEvent(null);
+      alert('Event modifié avec succès !');
+    }
+  };
+
+  const handleDeleteEvent = async (id: number) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cet événement ?')) return;
+
+    const response = await fetch(`/api/events/${id}`, {
+      method: 'DELETE',
+    });
+
+    if (response.ok) {
+      setEvents(events.filter(e => e.id !== id));
+      alert('Event supprimé avec succès !');
     }
   };
 
@@ -397,9 +469,9 @@ export default function AdminPage() {
           {activeTab === 'event' && (
             <section>
               <h2 className="font-helvetica text-2xl font-bold mb-4">
-                Ajouter un Événement
+                {editingEvent ? 'Modifier un Événement' : 'Ajouter un Événement'}
               </h2>
-              <form onSubmit={handleEventSubmit} className="space-y-4">
+              <form onSubmit={editingEvent ? handleUpdateEvent : handleEventSubmit} className="space-y-4">
                 <div>
                   <label className="block font-gotham text-sm font-medium text-gray-700 mb-1">
                     Titre de l&apos;événement
@@ -448,13 +520,66 @@ export default function AdminPage() {
                     required
                   />
                 </div>
-                <button
-                  type="submit"
-                  className="w-full bg-cafe-joyeux text-white font-helvetica font-bold py-2 px-4 rounded-md hover:bg-yellow-500 transition-colors"
-                >
-                  Ajouter l&apos;événement
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    className="flex-1 bg-cafe-joyeux text-white font-helvetica font-bold py-2 px-4 rounded-md hover:bg-yellow-500 transition-colors"
+                  >
+                    {editingEvent ? 'Modifier l\'événement' : 'Ajouter l\'événement'}
+                  </button>
+                  {editingEvent && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingEvent(null);
+                        setEvent({
+                          titre: '',
+                          date: '',
+                          heure: '',
+                          description: '',
+                        });
+                      }}
+                      className="bg-gray-500 text-white font-helvetica font-bold py-2 px-4 rounded-md hover:bg-gray-600 transition-colors"
+                    >
+                      Annuler
+                    </button>
+                  )}
+                </div>
               </form>
+
+              {/* Liste des événements */}
+              <div className="mt-8">
+                <h3 className="font-helvetica text-xl font-bold mb-4">Liste des événements</h3>
+                <div className="space-y-4">
+                  {events.map((event) => (
+                    <div key={event.id} className="bg-gray-50 p-4 rounded-lg">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h4 className="font-helvetica font-bold text-lg">{event.titre}</h4>
+                          <p className="text-gray-600">
+                            {new Date(event.date).toLocaleDateString('fr-FR')} à {event.heure}
+                          </p>
+                          <p className="mt-2 text-gray-700">{event.description}</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleEditEvent(event)}
+                            className="text-blue-600 hover:text-blue-800 font-helvetica font-semibold"
+                          >
+                            Modifier
+                          </button>
+                          <button
+                            onClick={() => handleDeleteEvent(event.id)}
+                            className="text-red-500 hover:text-red-700 font-helvetica font-semibold"
+                          >
+                            Supprimer
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </section>
           )}
 
