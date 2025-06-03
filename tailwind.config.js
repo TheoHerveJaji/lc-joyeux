@@ -8,7 +8,7 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        'cafe-joyeux': '#ffc33e',
+        'cafe-joyeux': '#FCC000',
       },
       fontFamily: {
         'helvetica': ['Helvetica', 'Arial', 'sans-serif'],
