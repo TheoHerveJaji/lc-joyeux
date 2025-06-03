@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
+import { Settings } from 'lucide-react';
 
 export default function Navigation() {
   const pathname = usePathname();
@@ -34,13 +35,14 @@ export default function Navigation() {
         <div className="flex items-center gap-4">
           <Link
             href={adminHref}
-            className={`font-gotham px-5 py-2 rounded-lg text-base font-semibold shadow-sm border border-black/10 bg-white hover:bg-yellow-100 transition-colors ${
+            className={`font-gotham px-5 py-2 rounded-lg text-base font-semibold shadow-sm border border-black/10 bg-white hover:bg-yellow-100 transition-colors flex items-center gap-2 ${
               pathname === '/administration'
                 ? 'ring-2 ring-cafe-joyeux text-cafe-joyeux'
                 : 'text-gray-900'
             }`}
           >
-            Administration
+            <span className="md:hidden"><Settings className="w-5 h-5" /></span>
+            <span className="hidden md:inline">Administration</span>
           </Link>
         </div>
       </div>
