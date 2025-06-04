@@ -142,7 +142,7 @@ export default function Home() {
       </section>
 
       {/* Card plat du jour */}
-      <section className="max-w-4xl mx-auto px-2 md:px-0">
+      <section className="max-w-4xl mx-auto px-2 md:px-0 mb-8">
         <div className="bg-white border-2 border-cafe-joyeux rounded-xl shadow-lg p-4 md:p-10 flex flex-col md:flex-row gap-8 items-stretch">
           <div className="flex flex-col gap-4 md:w-1/3">
             {platDuJour.fileUrl ? (
@@ -188,7 +188,7 @@ export default function Home() {
         <section className="py-8 px-4 sm:px-6 lg:px-8 bg-white/80 z-10 relative">
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-10">
-              <h2 className="font-helvetica text-3xl font-bold text-pink-500 mb-2 animate-fade-in">
+              <h2 className="font-helvetica text-3xl font-bold mb-2 animate-fade-in">
                 <span className="inline-flex items-center gap-2"><span className="text-3xl">🎉</span> Offres du moment</span>
               </h2>
               <p className="font-gotham text-lg text-gray-600">
@@ -196,9 +196,9 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-8">
+            <div className="grid md:grid-cols-2 gap-8 mb-8">
               {events.map((event) => (
-                <div key={event.id} className="bg-gradient-to-br from-white via-white to-yellow-100 rounded-3xl shadow-2xl overflow-hidden hover:shadow-3xl transition-shadow flex flex-col md:flex-row items-stretch border-2 border-cafe-joyeux animate-pop">
+                <div key={event.id} className="bg-gradient-to-br from-white via-white to-yellow-100 rounded-xl shadow-2xl overflow-hidden hover:shadow-3xl transition-shadow flex flex-col md:flex-row items-stretch border-2 border-cafe-joyeux animate-pop">
                   <div className="flex-1 p-6 flex flex-col justify-center">
                     <div className="flex items-center gap-2 mb-2">
                       <Calendar className="w-5 h-5 text-cafe-joyeux" />
@@ -226,14 +226,14 @@ export default function Home() {
           <div className="bg-white border-2 border-cafe-joyeux rounded-xl shadow-lg p-4 md:p-10">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2">
-                <h2 className="font-helvetica text-2xl font-bold text-cafe-joyeux">Menu de la Semaine</h2>
+                <h2 className="font-helvetica text-2xl font-bold">Menu de la Semaine</h2>
                 <span className="text-2xl">📋</span>
               </div>
               <a
                 href={menuUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-4 py-2 bg-cafe-joyeux text-white rounded-lg hover:bg-cafe-joyeux/90 transition-colors"
+                className="px-4 py-2 border border-cafe-joyeux rounded-lg hover:bg-cafe-joyeux/90 transition-colors"
               >
                 Télécharger le menu
               </a>
