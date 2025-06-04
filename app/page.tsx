@@ -56,6 +56,8 @@ export default function Home() {
         if (response.ok) {
           const data = await response.json();
           setEvents(data);
+        } else {
+          console.error('Error response:', await response.text());
         }
       } catch (error) {
         console.error('Erreur lors de la récupération des événements:', error);

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Settings } from 'lucide-react';
+import Image from 'next/image';
 
 type Tab = 'menu' | 'plat' | 'event' | 'categories';
 
@@ -17,6 +18,7 @@ export default function AdminPage() {
     description: '',
     tags: [] as string[],
     image: null as File | null,
+    fileUrl: null as string | null,
   });
 
   const [event, setEvent] = useState({
@@ -39,6 +41,7 @@ export default function AdminPage() {
 
   const [menuFile, setMenuFile] = useState<File | null>(null);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
+  const [currentMenuUrl, setCurrentMenuUrl] = useState<string | null>(null);
   const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
   const [newCategory, setNewCategory] = useState('');
 
@@ -53,13 +56,35 @@ export default function AdminPage() {
     }
   }, [session, status, router]);
 
-  // Charger depuis l'API au montage
+  // Charger le menu au montage
+  useEffect(() => {
+    const fetchMenu = async () => {
+      try {
+        const response = await fetch('/api/menu');
+        if (response.ok) {
+          const data = await response.json();
+          setCurrentMenuUrl(data.url);
+        }
+      } catch (error) {
+        console.error('Erreur lors de la récupération du menu:', error);
+      }
+    };
+    fetchMenu();
+  }, []);
+
+  // Charger le plat du jour au montage
   useEffect(() => {
     const fetchPlat = async () => {
       const response = await fetch('/api/plat');
       if (response.ok) {
         const data = await response.json();
-        setPlat(data);
+        setPlat({
+          nom: data.nom || '',
+          description: data.description || '',
+          tags: data.tags || [],
+          image: null,
+          fileUrl: data.fileUrl || null,
+        });
       }
     };
     fetchPlat();
@@ -130,6 +155,7 @@ export default function AdminPage() {
         description: '',
         tags: [],
         image: null,
+        fileUrl: null,
       });
     }
   };
@@ -408,6 +434,19 @@ export default function AdminPage() {
                   <p className="text-red-600 text-sm">Erreur lors de l&apos;upload du menu</p>
                 )}
               </form>
+
+              {currentMenuUrl && (
+                <div className="mt-8">
+                  <h3 className="font-helvetica text-lg font-semibold mb-2">Menu actuel :</h3>
+                  <div className="w-full h-[500px] border border-gray-200 rounded-lg overflow-hidden">
+                    <iframe
+                      src={`${currentMenuUrl}#toolbar=0&navpanes=0`}
+                      className="w-full h-full"
+                      title="Menu de la semaine"
+                    />
+                  </div>
+                </div>
+              )}
             </section>
           )}
 
@@ -465,6 +504,21 @@ export default function AdminPage() {
                     ))}
                   </div>
                 </div>
+
+                {plat.fileUrl && (
+                  <div className="flex justify-center">
+                    <div className="w-48 h-48 relative rounded-lg overflow-hidden border border-gray-200">
+                      <Image
+                        src={plat.fileUrl}
+                        alt={plat.nom}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, 192px"
+                      />
+                    </div>
+                  </div>
+                )}
+
                 <div>
                   <label className="block font-gotham text-sm font-medium text-gray-700 mb-1">
                     Image du plat

@@ -21,9 +21,6 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log("Type de fichier reçu:", file.type);
-    console.log("Taille du fichier:", file.size);
-
     // Supprimer l'ancien menu s'il existe
     await prisma.menu.deleteMany();
 
@@ -48,8 +45,6 @@ export async function POST(request: Request) {
         fileType: file.type,
       },
     });
-
-    console.log("Menu créé dans la base de données:", menu);
 
     return NextResponse.json({
       success: true,
