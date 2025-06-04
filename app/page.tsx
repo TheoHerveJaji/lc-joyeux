@@ -33,70 +33,112 @@ export default function Home() {
   const [events, setEvents] = useState<Event[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [menuUrl, setMenuUrl] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchPlat = async () => {
+    const fetchData = async () => {
+      setIsLoading(true);
       try {
-        const response = await fetch('/api/plat');
-        if (response.ok) {
-          const data = await response.json();
+        const [platResponse, eventsResponse, categoriesResponse, menuResponse] = await Promise.all([
+          fetch('/api/plat'),
+          fetch('/api/events'),
+          fetch('/api/categories'),
+          fetch('/api/menu')
+        ]);
+
+        if (platResponse.ok) {
+          const data = await platResponse.json();
           setPlatDuJour(data);
         }
-      } catch (error) {
-        console.error('Erreur lors de la récupération du plat du jour:', error);
-      }
-    };
-    fetchPlat();
-  }, []);
-
-  useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        const response = await fetch('/api/events');
-        if (response.ok) {
-          const data = await response.json();
+        if (eventsResponse.ok) {
+          const data = await eventsResponse.json();
           setEvents(data);
-        } else {
-          console.error('Error response:', await response.text());
         }
-      } catch (error) {
-        console.error('Erreur lors de la récupération des événements:', error);
-      }
-    };
-    fetchEvents();
-  }, []);
-
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await fetch('/api/categories');
-        if (response.ok) {
-          const data = await response.json();
+        if (categoriesResponse.ok) {
+          const data = await categoriesResponse.json();
           setCategories(data);
         }
-      } catch (error) {
-        console.error('Erreur lors de la récupération des catégories:', error);
-      }
-    };
-    fetchCategories();
-  }, []);
-
-  useEffect(() => {
-    const fetchMenu = async () => {
-      try {
-        const response = await fetch('/api/menu');
-        if (response.ok) {
-          const data = await response.json();
+        if (menuResponse.ok) {
+          const data = await menuResponse.json();
           setMenuUrl(data.url);
-        } else {
-          console.error('Erreur lors de la récupération du menu:', await response.text());
         }
       } catch (error) {
-        console.error('Erreur lors de la récupération du menu:', error);
+        console.error('Erreur lors de la récupération des données:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
-    fetchMenu();
+
+    fetchData();
   }, []);
+
+  if (isLoading) {
+    return (
+      <main className="flex-1 overflow-x-hidden pt-8">
+        {/* Skeleton pour le titre */}
+        <div className="flex items-center gap-2 justify-center z-10 relative mb-6">
+          <div className="w-12 h-12 bg-gray-200 rounded-full animate-pulse" />
+          <div className="w-32 h-8 bg-gray-200 rounded animate-pulse" />
+        </div>
+
+        {/* Skeleton pour la date */}
+        <section className="text-center my-6">
+          <div className="w-64 h-8 bg-gray-200 rounded animate-pulse mx-auto mb-2" />
+          <div className="w-48 h-6 bg-gray-200 rounded animate-pulse mx-auto" />
+        </section>
+
+        {/* Skeleton pour le plat du jour */}
+        <section className="max-w-4xl mx-auto px-2 md:px-0 mb-8">
+          <div className="bg-white border-2 border-gray-200 rounded-xl shadow-lg p-4 md:p-10 flex flex-col md:flex-row gap-8 items-stretch">
+            <div className="flex flex-col gap-4 md:w-1/3">
+              <div className="aspect-square w-full rounded-xl bg-gray-200 animate-pulse" />
+            </div>
+            <div className="flex-1 flex flex-col justify-center gap-2">
+              <div className="w-3/4 h-8 bg-gray-200 rounded animate-pulse mb-4" />
+              <div className="w-full h-4 bg-gray-200 rounded animate-pulse mb-2" />
+              <div className="w-full h-4 bg-gray-200 rounded animate-pulse mb-2" />
+              <div className="w-2/3 h-4 bg-gray-200 rounded animate-pulse mb-4" />
+              <div className="flex gap-2">
+                <div className="w-20 h-6 bg-gray-200 rounded-full animate-pulse" />
+                <div className="w-24 h-6 bg-gray-200 rounded-full animate-pulse" />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Skeleton pour les événements */}
+        <section className="py-8 px-4 sm:px-6 lg:px-8 bg-white/80 z-10 relative">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-10">
+              <div className="w-48 h-8 bg-gray-200 rounded animate-pulse mx-auto mb-2" />
+              <div className="w-64 h-6 bg-gray-200 rounded animate-pulse mx-auto" />
+            </div>
+            <div className="grid md:grid-cols-2 gap-8">
+              {[1, 2].map((i) => (
+                <div key={i} className="bg-white rounded-xl shadow-lg p-6 animate-pulse">
+                  <div className="w-32 h-6 bg-gray-200 rounded mb-4" />
+                  <div className="w-3/4 h-8 bg-gray-200 rounded mb-4" />
+                  <div className="w-full h-4 bg-gray-200 rounded mb-2" />
+                  <div className="w-2/3 h-4 bg-gray-200 rounded" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Skeleton pour le menu */}
+        <section className="max-w-4xl mx-auto px-2 md:px-0 mb-16 pt-8">
+          <div className="bg-white border-2 border-gray-200 rounded-xl shadow-lg p-4 md:p-10">
+            <div className="flex items-center justify-between mb-6">
+              <div className="w-48 h-8 bg-gray-200 rounded animate-pulse" />
+              <div className="w-32 h-10 bg-gray-200 rounded animate-pulse" />
+            </div>
+            <div className="w-full h-[800px] bg-gray-200 rounded animate-pulse" />
+          </div>
+        </section>
+      </main>
+    );
+  }
 
   if (!platDuJour || !platDuJour.nom || !platDuJour.updatedAt) {
     return (
