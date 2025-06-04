@@ -4,17 +4,13 @@ import { prisma } from "@/lib/prisma";
 export async function GET() {
   try {
     const events = await prisma.event.findMany({
-      where: {
-        date: {
-          gte: new Date(), // Événements à partir d'aujourd'hui
-        },
-      },
       orderBy: {
-        date: "asc", // Tri par date croissante
+        date: "asc",
       },
     });
     return NextResponse.json(events);
   } catch (error) {
+    console.error("API: Error fetching events:", error);
     return NextResponse.json({ error: error }, { status: 500 });
   }
 }
