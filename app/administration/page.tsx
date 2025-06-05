@@ -11,7 +11,7 @@ type Tab = 'menu' | 'plat' | 'event' | 'categories';
 export default function AdminPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<Tab>('menu');
+  const [activeTab, setActiveTab] = useState<Tab>('plat');
   
   const [plat, setPlat] = useState({
     nom: '',
@@ -20,6 +20,28 @@ export default function AdminPage() {
     image: null as File | null,
     fileUrl: null as string | null,
   });
+
+  const [plat2, setPlat2] = useState({
+    nom: '',
+    description: '',
+    tags: [] as string[],
+    image: null as File | null,
+    fileUrl: null as string | null,
+  });
+
+  const [plats, setPlats] = useState<Array<{
+    id: number;
+    nom: string;
+    description: string;
+    tags: string[];
+    fileUrl: string | null;
+    createdAt: string;
+  }>>([]);
+
+  const [editingPlat, setEditingPlat] = useState<number | null>(null);
+  const [showSecondPlat, setShowSecondPlat] = useState(false);
+  const [platStatus, setPlatStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [platMessage, setPlatMessage] = useState('');
 
   const [event, setEvent] = useState({
     titre: '',
@@ -72,22 +94,39 @@ export default function AdminPage() {
     fetchMenu();
   }, []);
 
-  // Charger le plat du jour au montage
+  // Charger les plats au montage
   useEffect(() => {
-    const fetchPlat = async () => {
+    const fetchPlats = async () => {
       const response = await fetch('/api/plat');
       if (response.ok) {
         const data = await response.json();
-        setPlat({
-          nom: data.nom || '',
-          description: data.description || '',
-          tags: data.tags || [],
-          image: null,
-          fileUrl: data.fileUrl || null,
-        });
+        const plats = data.plats || [];
+        setPlats(plats);
+        
+        // Si des plats existent, les afficher dans le formulaire
+        if (plats.length > 0) {
+          setPlat({
+            nom: plats[0].nom,
+            description: plats[0].description,
+            tags: plats[0].tags,
+            image: null,
+            fileUrl: plats[0].fileUrl,
+          });
+
+          if (plats.length > 1) {
+            setPlat2({
+              nom: plats[1].nom,
+              description: plats[1].description,
+              tags: plats[1].tags,
+              image: null,
+              fileUrl: plats[1].fileUrl,
+            });
+            setShowSecondPlat(true);
+          }
+        }
       }
     };
-    fetchPlat();
+    fetchPlats();
   }, []);
 
   // Charger les catégories au montage
@@ -114,49 +153,195 @@ export default function AdminPage() {
     fetchEvents();
   }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setPlat({ ...plat, [e.target.name]: e.target.value });
-  };
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setPlat({ ...plat, image: e.target.files[0] });
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>, platNumber: number) => {
+    if (platNumber === 1) {
+      setPlat({ ...plat, [e.target.name]: e.target.value });
+    } else {
+      setPlat2({ ...plat2, [e.target.name]: e.target.value });
     }
   };
 
-  const handleTagToggle = (tag: string) => {
-    setPlat((prev) => ({
-      ...prev,
-      tags: prev.tags.includes(tag)
-        ? prev.tags.filter((t) => t !== tag)
-        : [...prev.tags, tag],
-    }));
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, platNumber: number) => {
+    if (e.target.files && e.target.files[0]) {
+      if (platNumber === 1) {
+        setPlat({ ...plat, image: e.target.files[0] });
+      } else {
+        setPlat2({ ...plat2, image: e.target.files[0] });
+      }
+    }
+  };
+
+  const handleTagToggle = (tag: string, platNumber: number) => {
+    if (platNumber === 1) {
+      setPlat((prev) => ({
+        ...prev,
+        tags: prev.tags.includes(tag)
+          ? prev.tags.filter((t) => t !== tag)
+          : [...prev.tags, tag],
+      }));
+    } else {
+      setPlat2((prev) => ({
+        ...prev,
+        tags: prev.tags.includes(tag)
+          ? prev.tags.filter((t) => t !== tag)
+          : [...prev.tags, tag],
+      }));
+    }
+  };
+
+  const handleRemoveImage = async (platNumber: number) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer l\'image de ce plat ?')) return;
+    setPlatStatus('idle');
+
+    const platId = platNumber === 1 ? plats[0]?.id : plats[1]?.id;
+    if (!platId) return;
+
+    const response = await fetch(`/api/plat/${platId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ removeImage: true }),
+    });
+
+    if (response.ok) {
+      if (platNumber === 1) {
+        setPlat(prev => ({ ...prev, fileUrl: null }));
+      } else {
+        setPlat2(prev => ({ ...prev, fileUrl: null }));
+      }
+      setPlatStatus('success');
+      setPlatMessage('Image supprimée avec succès !');
+    } else {
+      setPlatStatus('error');
+      setPlatMessage('Erreur lors de la suppression de l\'image');
+    }
+  };
+
+  const handleDeletePlat = async (platNumber: number) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce plat ?')) return;
+    setPlatStatus('idle');
+
+    const platId = platNumber === 1 ? plats[0]?.id : plats[1]?.id;
+    if (!platId) return;
+
+    const response = await fetch(`/api/plat/${platId}`, {
+      method: 'DELETE',
+    });
+
+    if (response.ok) {
+      if (platNumber === 1) {
+        setPlat({
+          nom: '',
+          description: '',
+          tags: [],
+          image: null,
+          fileUrl: null,
+        });
+        // Si on supprime le premier plat et qu'il y a un deuxième plat, on le déplace en premier
+        if (plats.length > 1) {
+          setPlat({
+            nom: plats[1].nom,
+            description: plats[1].description,
+            tags: plats[1].tags,
+            image: null,
+            fileUrl: plats[1].fileUrl,
+          });
+          setPlat2({
+            nom: '',
+            description: '',
+            tags: [],
+            image: null,
+            fileUrl: null,
+          });
+          setShowSecondPlat(false);
+        }
+      } else {
+        setPlat2({
+          nom: '',
+          description: '',
+          tags: [],
+          image: null,
+          fileUrl: null,
+        });
+        setShowSecondPlat(false);
+      }
+      setPlats(plats.filter(p => p.id !== platId));
+      setPlatStatus('success');
+      setPlatMessage('Plat supprimé avec succès !');
+    } else {
+      setPlatStatus('error');
+      setPlatMessage('Erreur lors de la suppression du plat');
+    }
   };
 
   const handlePlatSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const formData = new FormData();
-    formData.append("nom", plat.nom);
-    formData.append("description", plat.description);
-    formData.append("tags", JSON.stringify(plat.tags));
-    if (plat.image) {
-      formData.append("file", plat.image);
-    }
+    setPlatStatus('idle');
 
-    const response = await fetch('/api/plat', {
-      method: 'POST',
-      body: formData,
-    });
+    try {
+      const formData = new FormData();
+      
+      // Premier plat
+      formData.append("nom", plat.nom);
+      formData.append("description", plat.description);
+      formData.append("tags", JSON.stringify(plat.tags));
+      if (plat.image) {
+        formData.append("file", plat.image);
+      }
 
-    if (response.ok) {
-      alert('Plat du jour mis à jour avec succès !');
-      setPlat({
-        nom: '',
-        description: '',
-        tags: [],
-        image: null,
-        fileUrl: null,
+      // Deuxième plat si présent
+      if (showSecondPlat && plat2.nom && plat2.description) {
+        formData.append("nom2", plat2.nom);
+        formData.append("description2", plat2.description);
+        formData.append("tags2", JSON.stringify(plat2.tags));
+        if (plat2.image) {
+          formData.append("file2", plat2.image);
+        }
+      }
+
+      const response = await fetch('/api/plat', {
+        method: 'POST',
+        body: formData,
       });
+
+      if (response.ok) {
+        const data = await response.json();
+        setPlats(data.plats);
+        setPlatStatus('success');
+        setPlatMessage('Plats mis à jour avec succès !');
+        
+        // Mettre à jour les formulaires avec les nouvelles données
+        if (data.plats.length > 0) {
+          setPlat({
+            nom: data.plats[0].nom,
+            description: data.plats[0].description,
+            tags: data.plats[0].tags,
+            image: null,
+            fileUrl: data.plats[0].fileUrl,
+          });
+
+          if (data.plats.length > 1) {
+            setPlat2({
+              nom: data.plats[1].nom,
+              description: data.plats[1].description,
+              tags: data.plats[1].tags,
+              image: null,
+              fileUrl: data.plats[1].fileUrl,
+            });
+            setShowSecondPlat(true);
+          } else {
+            setShowSecondPlat(false);
+          }
+        }
+      } else {
+        setPlatStatus('error');
+        setPlatMessage('Erreur lors de la mise à jour des plats');
+      }
+    } catch (error) {
+      console.error('Erreur:', error);
+      setPlatStatus('error');
+      setPlatMessage('Une erreur est survenue');
     }
   };
 
@@ -344,16 +529,6 @@ export default function AdminPage() {
         {/* Onglets */}
         <div className="flex border-b border-gray-200 mb-6 overflow-x-auto whitespace-nowrap w-full scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
           <button
-            onClick={() => setActiveTab('menu')}
-            className={`px-6 py-3 font-helvetica font-semibold transition-colors border-b-2 ${
-              activeTab === 'menu'
-                ? 'text-cafe-joyeux border-cafe-joyeux'
-                : 'text-gray-600 border-transparent hover:text-gray-800'
-            }`}
-          >
-            Menu de la Semaine
-          </button>
-          <button
             onClick={() => setActiveTab('plat')}
             className={`px-6 py-3 font-helvetica font-semibold transition-colors border-b-2 ${
               activeTab === 'plat'
@@ -374,6 +549,16 @@ export default function AdminPage() {
             Événements
           </button>
           <button
+            onClick={() => setActiveTab('menu')}
+            className={`px-6 py-3 font-helvetica font-semibold transition-colors border-b-2 ${
+              activeTab === 'menu'
+                ? 'text-cafe-joyeux border-cafe-joyeux'
+                : 'text-gray-600 border-transparent hover:text-gray-800'
+            }`}
+          >
+            Menu de la Semaine
+          </button>
+          <button
             onClick={() => setActiveTab('categories')}
             className={`px-6 py-3 font-helvetica font-semibold transition-colors border-b-2 ${
               activeTab === 'categories'
@@ -387,165 +572,253 @@ export default function AdminPage() {
 
         {/* Contenu des onglets */}
         <div className="bg-white p-6 rounded-lg shadow-sm">
-          {/* Onglet Menu */}
-          {activeTab === 'menu' && (
-            <section>
-              <h2 className="font-helvetica text-2xl font-bold mb-4">
-                Menu de la Semaine
-              </h2>
-              <form onSubmit={handleMenuUpload} className="space-y-4">
-                <div>
-                  <label className="block font-gotham text-sm font-medium text-gray-700 mb-1">
-                    Upload du menu PDF
-                  </label>
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    onChange={(e) => setMenuFile(e.target.files?.[0] || null)}
-                    className="w-full p-2 border border-gray-300 rounded-md font-gotham
-                      file:mr-4 file:py-2 file:px-4
-                      file:rounded-full file:border-0
-                      file:text-sm file:font-semibold
-                      file:bg-cafe-joyeux file:text-white
-                      hover:file:bg-cafe-joyeux/90"
-                    required
-                  />
-                  {menuFile && (
-                    <p className="mt-2 text-sm text-gray-500">
-                      Fichier sélectionné : {menuFile.name}
-                    </p>
-                  )}
-                </div>
-                <button
-                  type="submit"
-                  disabled={!menuFile || uploadStatus === 'uploading'}
-                  className={`w-full bg-cafe-joyeux text-white font-helvetica font-bold py-2 px-4 rounded-md transition-colors ${
-                    !menuFile || uploadStatus === 'uploading'
-                      ? 'opacity-50 cursor-not-allowed'
-                      : 'hover:bg-yellow-500'
-                  }`}
-                >
-                  {uploadStatus === 'uploading' ? 'Upload en cours...' : 'Uploader le menu'}
-                </button>
-                {uploadStatus === 'success' && (
-                  <p className="text-green-600 text-sm">Menu enregistré avec succès !</p>
-                )}
-                {uploadStatus === 'error' && (
-                  <p className="text-red-600 text-sm">Erreur lors de l&apos;upload du menu</p>
-                )}
-              </form>
-
-              {currentMenuUrl && (
-                <div className="mt-8">
-                  <h3 className="font-helvetica text-lg font-semibold mb-2">Menu actuel :</h3>
-                  <div className="w-full h-[500px] border border-gray-200 rounded-lg overflow-hidden">
-                    <iframe
-                      src={`${currentMenuUrl}#toolbar=0&navpanes=0`}
-                      className="w-full h-full"
-                      title="Menu de la semaine"
-                    />
-                  </div>
-                </div>
-              )}
-            </section>
-          )}
-
           {/* Onglet Plat du Jour */}
           {activeTab === 'plat' && (
             <section>
               <h2 className="font-helvetica text-2xl font-bold mb-4">
-                Modifier le Plat du Jour
+                Gérer les Plats du Jour
               </h2>
-              <form onSubmit={handlePlatSubmit} className="space-y-4">
-                <div>
-                  <label className="block font-gotham text-sm font-medium text-gray-700 mb-1">
-                    Nom du plat
-                  </label>
-                  <input
-                    type="text"
-                    name="nom"
-                    value={plat.nom}
-                    onChange={handleChange}
-                    className="w-full p-2 border border-gray-300 rounded-md font-gotham"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block font-gotham text-sm font-medium text-gray-700 mb-1">
-                    Description
-                  </label>
-                  <textarea
-                    name="description"
-                    value={plat.description}
-                    onChange={handleChange}
-                    className="w-full p-2 border border-gray-300 rounded-md font-gotham"
-                    rows={3}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block font-gotham text-sm font-medium text-gray-700 mb-1">
-                    Catégories
-                  </label>
-                  <div className="flex gap-2 flex-wrap">
-                    {categories.map((category) => (
-                      <button
-                        type="button"
-                        key={category.id}
-                        onClick={() => handleTagToggle(category.name)}
-                        className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
-                          plat.tags.includes(category.name)
-                            ? 'bg-cafe-joyeux text-black border-cafe-joyeux'
-                            : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-yellow-50'
-                        }`}
-                      >
-                        {category.name}
-                      </button>
-                    ))}
+              <form onSubmit={handlePlatSubmit} className="space-y-8">
+                {/* Premier plat */}
+                <div className="space-y-4 p-4 border border-gray-200 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-helvetica text-xl font-bold">Premier plat</h3>
+                    <button
+                      type="button"
+                      onClick={() => handleDeletePlat(1)}
+                      className="text-red-500 hover:text-red-700 font-helvetica font-semibold"
+                    >
+                      Supprimer le plat
+                    </button>
+                  </div>
+                  <div>
+                    <label className="block font-gotham text-sm font-medium text-gray-700 mb-1">
+                      Nom du plat
+                    </label>
+                    <input
+                      type="text"
+                      name="nom"
+                      value={plat.nom}
+                      onChange={(e) => handleChange(e, 1)}
+                      className="w-full p-2 border border-gray-300 rounded-md font-gotham"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-gotham text-sm font-medium text-gray-700 mb-1">
+                      Description
+                    </label>
+                    <textarea
+                      name="description"
+                      value={plat.description}
+                      onChange={(e) => handleChange(e, 1)}
+                      className="w-full p-2 border border-gray-300 rounded-md font-gotham"
+                      rows={3}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-gotham text-sm font-medium text-gray-700 mb-1">
+                      Catégories
+                    </label>
+                    <div className="flex gap-2 flex-wrap">
+                      {categories.map((category) => (
+                        <button
+                          type="button"
+                          key={category.id}
+                          onClick={() => handleTagToggle(category.name, 1)}
+                          className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
+                            plat.tags.includes(category.name)
+                              ? 'bg-cafe-joyeux text-black border-cafe-joyeux'
+                              : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-yellow-50'
+                          }`}
+                        >
+                          {category.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block font-gotham text-sm font-medium text-gray-700 mb-1">
+                      Image du plat
+                    </label>
+                    {plat.fileUrl && (
+                      <div className="mb-4">
+                        <div className="w-48 h-48 relative rounded-lg overflow-hidden border border-gray-200">
+                          <Image
+                            src={plat.fileUrl}
+                            alt={plat.nom}
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 768px) 100vw, 192px"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(1)}
+                          className="mt-2 text-red-500 hover:text-red-700 font-helvetica font-semibold"
+                        >
+                          Supprimer l'image
+                        </button>
+                      </div>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleImageChange(e, 1)}
+                      className="w-full p-2 border border-gray-300 rounded-md font-gotham
+                        file:mr-4 file:py-2 file:px-4
+                        file:rounded-full file:border-0
+                        file:text-sm file:font-semibold
+                        file:bg-cafe-joyeux file:text-white
+                        hover:file:bg-cafe-joyeux/90"
+                    />
+                    {plat.image && (
+                      <p className="mt-2 text-sm text-gray-500">
+                        Nouvelle image sélectionnée : {plat.image.name}
+                      </p>
+                    )}
                   </div>
                 </div>
 
-                {plat.fileUrl && (
-                  <div className="flex justify-center">
-                    <div className="w-48 h-48 relative rounded-lg overflow-hidden border border-gray-200">
-                      <Image
-                        src={plat.fileUrl}
-                        alt={plat.nom}
-                        fill
-                        className="object-cover"
-                        sizes="(max-width: 768px) 100vw, 192px"
+                {/* Bouton pour ajouter un deuxième plat */}
+                {!showSecondPlat && plat.nom && plat.description && (
+                  <button
+                    type="button"
+                    onClick={() => setShowSecondPlat(true)}
+                    className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-cafe-joyeux hover:text-cafe-joyeux transition-colors font-helvetica font-semibold"
+                  >
+                    + Ajouter un deuxième plat
+                  </button>
+                )}
+
+                {/* Deuxième plat */}
+                {showSecondPlat && (
+                  <div className="space-y-4 p-4 border border-gray-200 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <h3 className="font-helvetica text-xl font-bold">Deuxième plat</h3>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowSecondPlat(false);
+                          setPlat2({
+                            nom: '',
+                            description: '',
+                            tags: [],
+                            image: null,
+                            fileUrl: null,
+                          });
+                        }}
+                        className="text-red-500 hover:text-red-700 font-helvetica font-semibold"
+                      >
+                        Supprimer le plat
+                      </button>
+                    </div>
+                    <div>
+                      <label className="block font-gotham text-sm font-medium text-gray-700 mb-1">
+                        Nom du plat
+                      </label>
+                      <input
+                        type="text"
+                        name="nom"
+                        value={plat2.nom}
+                        onChange={(e) => handleChange(e, 2)}
+                        className="w-full p-2 border border-gray-300 rounded-md font-gotham"
                       />
+                    </div>
+                    <div>
+                      <label className="block font-gotham text-sm font-medium text-gray-700 mb-1">
+                        Description
+                      </label>
+                      <textarea
+                        name="description"
+                        value={plat2.description}
+                        onChange={(e) => handleChange(e, 2)}
+                        className="w-full p-2 border border-gray-300 rounded-md font-gotham"
+                        rows={3}
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-gotham text-sm font-medium text-gray-700 mb-1">
+                        Catégories
+                      </label>
+                      <div className="flex gap-2 flex-wrap">
+                        {categories.map((category) => (
+                          <button
+                            type="button"
+                            key={category.id}
+                            onClick={() => handleTagToggle(category.name, 2)}
+                            className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
+                              plat2.tags.includes(category.name)
+                                ? 'bg-cafe-joyeux text-black border-cafe-joyeux'
+                                : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-yellow-50'
+                            }`}
+                          >
+                            {category.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block font-gotham text-sm font-medium text-gray-700 mb-1">
+                        Image du plat
+                      </label>
+                      {plat2.fileUrl && (
+                        <div className="mb-4">
+                          <div className="w-48 h-48 relative rounded-lg overflow-hidden border border-gray-200">
+                            <Image
+                              src={plat2.fileUrl}
+                              alt={plat2.nom}
+                              fill
+                              className="object-cover"
+                              sizes="(max-width: 768px) 100vw, 192px"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveImage(2)}
+                            className="mt-2 text-red-500 hover:text-red-700 font-helvetica font-semibold"
+                          >
+                            Supprimer l'image
+                          </button>
+                        </div>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleImageChange(e, 2)}
+                        className="w-full p-2 border border-gray-300 rounded-md font-gotham
+                          file:mr-4 file:py-2 file:px-4
+                          file:rounded-full file:border-0
+                          file:text-sm file:font-semibold
+                          file:bg-cafe-joyeux file:text-white
+                          hover:file:bg-cafe-joyeux/90"
+                      />
+                      {plat2.image && (
+                        <p className="mt-2 text-sm text-gray-500">
+                          Nouvelle image sélectionnée : {plat2.image.name}
+                        </p>
+                      )}
                     </div>
                   </div>
                 )}
 
-                <div>
-                  <label className="block font-gotham text-sm font-medium text-gray-700 mb-1">
-                    Image du plat
-                  </label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    className="w-full p-2 border border-gray-300 rounded-md font-gotham
-                      file:mr-4 file:py-2 file:px-4
-                      file:rounded-full file:border-0
-                      file:text-sm file:font-semibold
-                      file:bg-cafe-joyeux file:text-white
-                      hover:file:bg-cafe-joyeux/90"
-                  />
-                  {plat.image && (
-                    <p className="mt-2 text-sm text-gray-500">
-                      Image sélectionnée : {plat.image.name}
-                    </p>
-                  )}
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    className="flex-1 bg-cafe-joyeux text-white font-helvetica font-bold py-2 px-4 rounded-md hover:bg-yellow-500 transition-colors"
+                  >
+                    Enregistrer les modifications
+                  </button>
                 </div>
-                <button
-                  type="submit"
-                  className="w-full bg-cafe-joyeux text-white font-helvetica font-bold py-2 px-4 rounded-md hover:bg-yellow-500 transition-colors"
-                >
-                  Mettre à jour le plat du jour
-                </button>
+                {platStatus === 'success' && (
+                  <p className="text-green-600 text-sm">{platMessage}</p>
+                )}
+                {platStatus === 'error' && (
+                  <p className="text-red-600 text-sm">{platMessage}</p>
+                )}
               </form>
             </section>
           )}
@@ -672,6 +945,69 @@ export default function AdminPage() {
                   ))}
                 </div>
               </div>
+            </section>
+          )}
+
+          {/* Onglet Menu */}
+          {activeTab === 'menu' && (
+            <section>
+              <h2 className="font-helvetica text-2xl font-bold mb-4">
+                Menu de la Semaine
+              </h2>
+              <form onSubmit={handleMenuUpload} className="space-y-4">
+                <div>
+                  <label className="block font-gotham text-sm font-medium text-gray-700 mb-1">
+                    Upload du menu PDF
+                  </label>
+                  <input
+                    type="file"
+                    accept=".pdf"
+                    onChange={(e) => setMenuFile(e.target.files?.[0] || null)}
+                    className="w-full p-2 border border-gray-300 rounded-md font-gotham
+                      file:mr-4 file:py-2 file:px-4
+                      file:rounded-full file:border-0
+                      file:text-sm file:font-semibold
+                      file:bg-cafe-joyeux file:text-white
+                      hover:file:bg-cafe-joyeux/90"
+                    required
+                  />
+                  {menuFile && (
+                    <p className="mt-2 text-sm text-gray-500">
+                      Fichier sélectionné : {menuFile.name}
+                    </p>
+                  )}
+                </div>
+                <button
+                  type="submit"
+                  disabled={!menuFile || uploadStatus === 'uploading'}
+                  className={`w-full bg-cafe-joyeux text-white font-helvetica font-bold py-2 px-4 rounded-md transition-colors ${
+                    !menuFile || uploadStatus === 'uploading'
+                      ? 'opacity-50 cursor-not-allowed'
+                      : 'hover:bg-yellow-500'
+                  }`}
+                >
+                  {uploadStatus === 'uploading' ? 'Upload en cours...' : 'Uploader le menu'}
+                </button>
+                {uploadStatus === 'success' && (
+                  <p className="text-green-600 text-sm">Menu enregistré avec succès !</p>
+                )}
+                {uploadStatus === 'error' && (
+                  <p className="text-red-600 text-sm">Erreur lors de l&apos;upload du menu</p>
+                )}
+              </form>
+
+              {currentMenuUrl && (
+                <div className="mt-8">
+                  <h3 className="font-helvetica text-lg font-semibold mb-2">Menu actuel :</h3>
+                  <div className="w-full h-[500px] border border-gray-200 rounded-lg overflow-hidden">
+                    <iframe
+                      src={`${currentMenuUrl}#toolbar=0&navpanes=0`}
+                      className="w-full h-full"
+                      title="Menu de la semaine"
+                    />
+                  </div>
+                </div>
+              )}
             </section>
           )}
 
