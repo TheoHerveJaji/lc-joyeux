@@ -12,14 +12,15 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: Request) {
   try {
-    const id = parseInt(params.id);
+    const { pathname } = new URL(request.url);
+    const id = parseInt(pathname.split("/").pop() || "");
 
-    // Récupérer le plat avant de le supprimer pour avoir l'URL de l'image
+    if (isNaN(id)) {
+      return NextResponse.json({ error: "ID invalide" }, { status: 400 });
+    }
+
     const plat = await prisma.plat.findUnique({
       where: { id },
     });
@@ -28,7 +29,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Plat non trouvé" }, { status: 404 });
     }
 
-    // Supprimer l'image si elle existe
+    // Supprimer le fichier image si présent
     if (plat.fileUrl) {
       const oldImagePath = join(process.cwd(), "public", plat.fileUrl);
       if (existsSync(oldImagePath)) {
@@ -36,7 +37,6 @@ export async function DELETE(
       }
     }
 
-    // Supprimer le plat de la base de données
     await prisma.plat.delete({
       where: { id },
     });
@@ -51,50 +51,50 @@ export async function DELETE(
   }
 }
 
-export async function PATCH(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(request: Request) {
   try {
-    const id = parseInt(params.id);
+    const { pathname } = new URL(request.url);
+    const id = parseInt(pathname.split("/").pop() || "");
+
+    if (isNaN(id)) {
+      return NextResponse.json({ error: "ID invalide" }, { status: 400 });
+    }
+
     const body = await request.json();
     const { removeImage } = body;
 
-    if (removeImage) {
-      // Récupérer le plat avant de le modifier pour avoir l'URL de l'image
-      const plat = await prisma.plat.findUnique({
-        where: { id },
-      });
-
-      if (!plat) {
-        return NextResponse.json({ error: "Plat non trouvé" }, { status: 404 });
-      }
-
-      // Supprimer l'image si elle existe
-      if (plat.fileUrl) {
-        const oldImagePath = join(process.cwd(), "public", plat.fileUrl);
-        if (existsSync(oldImagePath)) {
-          await unlink(oldImagePath);
-        }
-      }
-
-      // Mettre à jour le plat pour retirer l'image
-      const updatedPlat = await prisma.plat.update({
-        where: { id },
-        data: {
-          fileUrl: null,
-          fileName: null,
-          fileType: null,
-        },
-      });
-
-      return NextResponse.json(updatedPlat);
+    if (!removeImage) {
+      return NextResponse.json(
+        { error: "Opération non supportée" },
+        { status: 400 }
+      );
     }
 
-    return NextResponse.json(
-      { error: "Opération non supportée" },
-      { status: 400 }
-    );
+    const plat = await prisma.plat.findUnique({
+      where: { id },
+    });
+
+    if (!plat) {
+      return NextResponse.json({ error: "Plat non trouvé" }, { status: 404 });
+    }
+
+    if (plat.fileUrl) {
+      const oldImagePath = join(process.cwd(), "public", plat.fileUrl);
+      if (existsSync(oldImagePath)) {
+        await unlink(oldImagePath);
+      }
+    }
+
+    const updatedPlat = await prisma.plat.update({
+      where: { id },
+      data: {
+        fileUrl: null,
+        fileName: null,
+        fileType: null,
+      },
+    });
+
+    return NextResponse.json(updatedPlat);
   } catch (error) {
     console.error("Erreur lors de la modification du plat:", error);
     return NextResponse.json(
@@ -104,17 +104,20 @@ export async function PATCH(
   }
 }
 
-export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(request: Request) {
   try {
-    const id = parseInt(params.id);
+    const { pathname } = new URL(request.url);
+    const id = parseInt(pathname.split("/").pop() || "");
+
+    if (isNaN(id)) {
+      return NextResponse.json({ error: "ID invalide" }, { status: 400 });
+    }
+
     const formData = await request.formData();
     const nom = formData.get("nom") as string;
     const description = formData.get("description") as string;
     const tags = formData.get("tags") as string;
-    const file = formData.get("file") as File;
+    const file = formData.get("file") as File | null;
 
     if (!nom || !description) {
       return NextResponse.json(
@@ -123,7 +126,6 @@ export async function PUT(
       );
     }
 
-    // Récupérer le plat existant
     const existingPlat = await prisma.plat.findUnique({
       where: { id },
     });
@@ -136,9 +138,7 @@ export async function PUT(
     let fileName = existingPlat.fileName;
     let fileType = existingPlat.fileType;
 
-    // Si une nouvelle image est fournie
     if (file) {
-      // Supprimer l'ancienne image si elle existe
       if (existingPlat.fileUrl) {
         const oldImagePath = join(
           process.cwd(),
@@ -150,21 +150,21 @@ export async function PUT(
         }
       }
 
-      // Upload de la nouvelle image sur Cloudinary
       const buffer = await file.arrayBuffer();
       const base64String = Buffer.from(buffer).toString("base64");
       const dataURI = `data:${file.type};base64,${base64String}`;
+
       const uploadResponse = await cloudinary.uploader.upload(dataURI, {
         folder: "plats",
         resource_type: "image",
         type: "upload",
       });
+
       fileUrl = uploadResponse.secure_url;
       fileName = file.name;
       fileType = file.type;
     }
 
-    // Mettre à jour le plat
     const updatedPlat = await prisma.plat.update({
       where: { id },
       data: {
