@@ -79,6 +79,9 @@ model Event {
   date        DateTime
   heure       String
   description String
+  fileUrl     String?  // URL de l'image
+  fileName    String?  // Nom du fichier
+  fileType    String?  // Type du fichier
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

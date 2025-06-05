@@ -48,6 +48,8 @@ export default function AdminPage() {
     date: '',
     heure: '',
     description: '',
+    image: null as File | null,
+    fileUrl: null as string | null,
   });
 
   const [events, setEvents] = useState<Array<{
@@ -56,6 +58,7 @@ export default function AdminPage() {
     date: string;
     heure: string;
     description: string;
+    fileUrl: string | null;
   }>>([]);
   const [editingEvent, setEditingEvent] = useState<number | null>(null);
   const [eventStatus, setEventStatus] = useState<'idle' | 'success' | 'error'>('idle');
@@ -370,16 +373,63 @@ export default function AdminPage() {
     }
   };
 
+  const handleEventImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setEvent({ ...event, image: e.target.files[0] });
+    }
+  };
+
+  const handleRemoveEventImage = async (eventId: number) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer l\'image de cet événement ?')) return;
+    setEventStatus('idle');
+
+    const formData = new FormData();
+    formData.append("titre", event.titre);
+    formData.append("date", event.date);
+    formData.append("heure", event.heure);
+    formData.append("description", event.description);
+    formData.append("removeImage", "true");
+
+    const response = await fetch(`/api/events/${eventId}`, {
+      method: 'PUT',
+      body: formData,
+    });
+
+    if (response.ok) {
+      const updatedEvent = await response.json();
+      setEvents(events.map(e => e.id === eventId ? updatedEvent : e));
+      if (editingEvent === eventId) {
+        setEvent(prev => ({
+          ...prev,
+          fileUrl: null
+        }));
+      }
+      setEventStatus('success');
+      setEventMessage('Image supprimée avec succès !');
+    } else {
+      setEventStatus('error');
+      setEventMessage('Erreur lors de la suppression de l\'image');
+    }
+  };
+
   const handleEventSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setEventStatus('idle');
+
+    const formData = new FormData();
+    formData.append("titre", event.titre);
+    formData.append("date", event.date);
+    formData.append("heure", event.heure);
+    formData.append("description", event.description);
+    if (event.image) {
+      formData.append("file", event.image);
+    }
+
     const response = await fetch('/api/events', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(event),
+      body: formData,
     });
+
     if (response.ok) {
       const newEvent = await response.json();
       setEvents([...events, newEvent]);
@@ -388,6 +438,8 @@ export default function AdminPage() {
         date: '',
         heure: '',
         description: '',
+        image: null,
+        fileUrl: null,
       });
       setEventStatus('success');
       setEventMessage('Événement ajouté avec succès !');
@@ -404,6 +456,8 @@ export default function AdminPage() {
       date: eventToEdit.date.split('T')[0],
       heure: eventToEdit.heure,
       description: eventToEdit.description,
+      image: null,
+      fileUrl: eventToEdit.fileUrl,
     });
   };
 
@@ -412,12 +466,18 @@ export default function AdminPage() {
     if (!editingEvent) return;
     setEventStatus('idle');
 
+    const formData = new FormData();
+    formData.append("titre", event.titre);
+    formData.append("date", event.date);
+    formData.append("heure", event.heure);
+    formData.append("description", event.description);
+    if (event.image) {
+      formData.append("file", event.image);
+    }
+
     const response = await fetch(`/api/events/${editingEvent}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(event),
+      body: formData,
     });
 
     if (response.ok) {
@@ -428,6 +488,8 @@ export default function AdminPage() {
         date: '',
         heure: '',
         description: '',
+        image: null,
+        fileUrl: null,
       });
       setEditingEvent(null);
       setEventStatus('success');
@@ -1120,6 +1182,47 @@ export default function AdminPage() {
                     required
                   />
                 </div>
+                <div>
+                  <label className="block font-gotham text-sm font-medium text-gray-700 mb-1">
+                    Image de l'événement
+                  </label>
+                  {event.fileUrl && (
+                    <div className="mb-4">
+                      <div className="w-48 h-48 relative rounded-lg overflow-hidden border border-gray-200">
+                        <Image
+                          src={event.fileUrl}
+                          alt={event.titre}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 768px) 100vw, 192px"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveEventImage(editingEvent!)}
+                        className="mt-2 text-red-500 hover:text-red-700 font-helvetica font-semibold"
+                      >
+                        Supprimer l'image
+                      </button>
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleEventImageChange}
+                    className="w-full p-2 border border-gray-300 rounded-md font-gotham
+                      file:mr-4 file:py-2 file:px-4
+                      file:rounded-full file:border-0
+                      file:text-sm file:font-semibold
+                      file:bg-cafe-joyeux file:text-white
+                      hover:file:bg-cafe-joyeux/90"
+                  />
+                  {event.image && (
+                    <p className="mt-2 text-sm text-gray-500">
+                      Nouvelle image sélectionnée : {event.image.name}
+                    </p>
+                  )}
+                </div>
                 <div className="flex gap-2">
                   <button
                     type="submit"
@@ -1137,6 +1240,8 @@ export default function AdminPage() {
                           date: '',
                           heure: '',
                           description: '',
+                          image: null,
+                          fileUrl: null,
                         });
                         setEventStatus('idle');
                       }}
@@ -1162,27 +1267,42 @@ export default function AdminPage() {
                     <div className="space-y-4">
                       {events.map((event) => (
                         <div key={event.id} className="bg-gray-50 p-4 rounded-lg">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h4 className="font-helvetica font-bold text-lg">{event.titre}</h4>
-                              <p className="text-gray-600">
-                                {new Date(event.date).toLocaleDateString('fr-FR')} à {event.heure}
-                              </p>
-                              <p className="mt-2 text-gray-700">{event.description}</p>
-                            </div>
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => handleEditEvent(event)}
-                                className="text-blue-600 hover:text-blue-800 font-helvetica font-semibold"
-                              >
-                                Modifier
-                              </button>
-                              <button
-                                onClick={() => handleDeleteEvent(event.id)}
-                                className="text-red-500 hover:text-red-700 font-helvetica font-semibold"
-                              >
-                                Supprimer
-                              </button>
+                          <div className="flex gap-4 items-start">
+                            {event.fileUrl && (
+                              <div className="w-32 h-32 relative rounded-lg overflow-hidden border border-gray-200 flex-shrink-0">
+                                <Image
+                                  src={event.fileUrl}
+                                  alt={event.titre}
+                                  fill
+                                  className="object-cover"
+                                  sizes="128px"
+                                />
+                              </div>
+                            )}
+                            <div className="flex-1">
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <h4 className="font-helvetica font-bold text-lg">{event.titre}</h4>
+                                  <p className="text-gray-600">
+                                    {new Date(event.date).toLocaleDateString('fr-FR')} à {event.heure}
+                                  </p>
+                                  <p className="mt-2 text-gray-700">{event.description}</p>
+                                </div>
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => handleEditEvent(event)}
+                                    className="text-blue-600 hover:text-blue-800 font-helvetica font-semibold"
+                                  >
+                                    Modifier
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteEvent(event.id)}
+                                    className="text-red-500 hover:text-red-700 font-helvetica font-semibold"
+                                  >
+                                    Supprimer
+                                  </button>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </div>
