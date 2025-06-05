@@ -12,6 +12,7 @@ interface Event {
   date: string;
   heure: string;
   description: string;
+  fileUrl?: string;
 }
 
 interface PlatDuJour {
@@ -294,7 +295,18 @@ export default function Home() {
             <div className="grid md:grid-cols-2 gap-8 mb-8">
               {events.map((event) => (
                 <div key={event.id} className="bg-gradient-to-br from-white via-white to-yellow-100 rounded-xl shadow-2xl overflow-hidden hover:shadow-3xl transition-shadow flex flex-col md:flex-row items-stretch border-2 border-cafe-joyeux animate-pop">
-                  <div className="flex-1 p-6 flex flex-col justify-center">
+                  {event.fileUrl && (
+                    <div className="md:w-1/3 relative">
+                      <Image
+                        src={event.fileUrl}
+                        alt={event.titre}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, 33vw"
+                      />
+                    </div>
+                  )}
+                  <div className={`flex-1 p-6 flex flex-col justify-center ${!event.fileUrl ? 'md:w-full' : ''}`}>
                     <div className="flex items-center gap-2 mb-2">
                       <Calendar className="w-5 h-5 text-cafe-joyeux" />
                       <span className="flex items-center gap-1 font-gotham font-medium text-sm bg-white px-3 py-1 rounded-full border border-cafe-joyeux">
