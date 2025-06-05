@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Settings } from 'lucide-react';
 import Image from 'next/image';
 
-type Tab = 'menu' | 'plat' | 'event' | 'categories';
+type Tab = 'menu' | 'plat' | 'event' | 'categories' | 'sides';
 
 export default function AdminPage() {
   const { data: session, status } = useSession();
@@ -66,6 +66,19 @@ export default function AdminPage() {
   const [currentMenuUrl, setCurrentMenuUrl] = useState<string | null>(null);
   const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
   const [newCategory, setNewCategory] = useState('');
+
+  const [sides, setSides] = useState<Array<{
+    id: number;
+    description: string;
+    category: string;
+  }>>([]);
+  const [newSide, setNewSide] = useState({
+    description: '',
+    category: 'salades',
+  });
+  const [editingSide, setEditingSide] = useState<number | null>(null);
+  const [sideStatus, setSideStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [sideMessage, setSideMessage] = useState('');
 
   // Redirection si pas connecté ou pas admin
   useEffect(() => {
@@ -151,6 +164,18 @@ export default function AdminPage() {
       }
     };
     fetchEvents();
+  }, []);
+
+  // Charger les sides au montage
+  useEffect(() => {
+    const fetchSides = async () => {
+      const response = await fetch('/api/sides');
+      if (response.ok) {
+        const data = await response.json();
+        setSides(data);
+      }
+    };
+    fetchSides();
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>, platNumber: number) => {
@@ -490,6 +515,103 @@ export default function AdminPage() {
     }
   };
 
+  const handleSideSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSideStatus('idle');
+
+    try {
+      const response = await fetch('/api/sides', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newSide),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSides([...sides, data]);
+        setNewSide({ description: '', category: 'salades' });
+        setSideStatus('success');
+        setSideMessage('Side ajouté avec succès !');
+      } else {
+        setSideStatus('error');
+        setSideMessage('Erreur lors de l\'ajout du side');
+      }
+    } catch (error) {
+      console.error('Erreur:', error);
+      setSideStatus('error');
+      setSideMessage('Une erreur est survenue');
+    }
+  };
+
+  const handleEditSide = (side: typeof sides[0]) => {
+    setEditingSide(side.id);
+    setNewSide({
+      description: side.description,
+      category: side.category,
+    });
+  };
+
+  const handleUpdateSide = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingSide) return;
+    setSideStatus('idle');
+
+    try {
+      const response = await fetch('/api/sides', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: editingSide,
+          description: newSide.description,
+        }),
+      });
+
+      if (response.ok) {
+        const updatedSide = await response.json();
+        setSides(sides.map(s => s.id === editingSide ? updatedSide : s));
+        setNewSide({ description: '', category: 'salades' });
+        setEditingSide(null);
+        setSideStatus('success');
+        setSideMessage('Side modifié avec succès !');
+      } else {
+        setSideStatus('error');
+        setSideMessage('Erreur lors de la modification du side');
+      }
+    } catch (error) {
+      console.error('Erreur:', error);
+      setSideStatus('error');
+      setSideMessage('Une erreur est survenue');
+    }
+  };
+
+  const handleDeleteSide = async (id: number) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce side ?')) return;
+    setSideStatus('idle');
+
+    try {
+      const response = await fetch(`/api/sides?id=${id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        setSides(sides.filter(s => s.id !== id));
+        setSideStatus('success');
+        setSideMessage('Side supprimé avec succès !');
+      } else {
+        setSideStatus('error');
+        setSideMessage('Erreur lors de la suppression du side');
+      }
+    } catch (error) {
+      console.error('Erreur:', error);
+      setSideStatus('error');
+      setSideMessage('Une erreur est survenue');
+    }
+  };
+
   if (status === 'loading') {
     return (
       <main className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -536,7 +658,17 @@ export default function AdminPage() {
                 : 'text-gray-600 border-transparent hover:text-gray-800'
             }`}
           >
-            Plat du Jour
+            Plats du Jour
+          </button>
+          <button
+            onClick={() => setActiveTab('sides')}
+            className={`px-6 py-3 font-helvetica font-semibold transition-colors border-b-2 ${
+              activeTab === 'sides'
+                ? 'text-cafe-joyeux border-cafe-joyeux'
+                : 'text-gray-600 border-transparent hover:text-gray-800'
+            }`}
+          >
+            Sides
           </button>
           <button
             onClick={() => setActiveTab('event')}
@@ -823,6 +955,116 @@ export default function AdminPage() {
             </section>
           )}
 
+          {/* Onglet Sides */}
+          {activeTab === 'sides' && (
+            <section>
+              <h2 className="font-helvetica text-2xl font-bold mb-4">
+                {editingSide ? 'Modifier un Side' : 'Ajouter un Side'}
+              </h2>
+              <form onSubmit={editingSide ? handleUpdateSide : handleSideSubmit} className="space-y-4">
+                <div>
+                  <label className="block font-gotham text-sm font-medium text-gray-700 mb-1">
+                    Catégorie
+                  </label>
+                  <select
+                    value={newSide.category}
+                    onChange={(e) => setNewSide({ ...newSide, category: e.target.value })}
+                    className="w-full p-2 border border-gray-300 rounded-md font-gotham"
+                    disabled={!!editingSide}
+                    required
+                  >
+                    <option value="salades">Salades</option>
+                    <option value="soupes">Soupes</option>
+                    <option value="buns">Buns</option>
+                    <option value="croques">Croques</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-gotham text-sm font-medium text-gray-700 mb-1">
+                    Description
+                  </label>
+                  <textarea
+                    value={newSide.description}
+                    onChange={(e) => setNewSide({ ...newSide, description: e.target.value })}
+                    className="w-full p-2 border border-gray-300 rounded-md font-gotham"
+                    rows={3}
+                    required
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    className="flex-1 bg-cafe-joyeux text-white font-helvetica font-bold py-2 px-4 rounded-md hover:bg-yellow-500 transition-colors"
+                  >
+                    {editingSide ? 'Modifier le side' : 'Ajouter le side'}
+                  </button>
+                  {editingSide && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingSide(null);
+                        setNewSide({ description: '', category: 'salades' });
+                        setSideStatus('idle');
+                      }}
+                      className="bg-gray-500 text-white font-helvetica font-bold py-2 px-4 rounded-md hover:bg-gray-600 transition-colors"
+                    >
+                      Annuler
+                    </button>
+                  )}
+                </div>
+                {sideStatus === 'success' && (
+                  <p className="text-green-600 text-sm">{sideMessage}</p>
+                )}
+                {sideStatus === 'error' && (
+                  <p className="text-red-600 text-sm">{sideMessage}</p>
+                )}
+              </form>
+
+              {/* Liste des sides par catégorie */}
+              <div className="mt-8">
+                {sides.length > 0 && (
+                  <h3 className="font-helvetica text-xl font-bold mb-4">Liste des Sides</h3>
+                )}
+                {['salades', 'soupes', 'buns', 'croques'].map((category) => {
+                  const categorySides = sides.filter(s => s.category === category);
+                  if (categorySides.length === 0) return null;
+
+                  return (
+                    <div key={category} className="mb-6">
+                      <h4 className="font-helvetica font-bold text-lg mb-2 capitalize">
+                        {category}
+                      </h4>
+                      <div className="space-y-2">
+                        {categorySides.map((side) => (
+                          <div
+                            key={side.id}
+                            className="flex items-center justify-between p-3 bg-gray-50 rounded-md"
+                          >
+                            <span className="font-gotham">{side.description}</span>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleEditSide(side)}
+                                className="text-blue-600 hover:text-blue-800 font-helvetica font-semibold"
+                              >
+                                Modifier
+                              </button>
+                              <button
+                                onClick={() => handleDeleteSide(side.id)}
+                                className="text-red-500 hover:text-red-700 font-helvetica font-semibold"
+                              >
+                                Supprimer
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
           {/* Onglet Events */}
           {activeTab === 'event' && (
             <section>
@@ -914,36 +1156,40 @@ export default function AdminPage() {
 
               {/* Liste des événements */}
               <div className="mt-8">
-                <h3 className="font-helvetica text-xl font-bold mb-4">Liste des événements</h3>
-                <div className="space-y-4">
-                  {events.map((event) => (
-                    <div key={event.id} className="bg-gray-50 p-4 rounded-lg">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h4 className="font-helvetica font-bold text-lg">{event.titre}</h4>
-                          <p className="text-gray-600">
-                            {new Date(event.date).toLocaleDateString('fr-FR')} à {event.heure}
-                          </p>
-                          <p className="mt-2 text-gray-700">{event.description}</p>
+                {events.length > 0 && (
+                  <>
+                    <h3 className="font-helvetica text-xl font-bold mb-4">Liste des Événements</h3>
+                    <div className="space-y-4">
+                      {events.map((event) => (
+                        <div key={event.id} className="bg-gray-50 p-4 rounded-lg">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h4 className="font-helvetica font-bold text-lg">{event.titre}</h4>
+                              <p className="text-gray-600">
+                                {new Date(event.date).toLocaleDateString('fr-FR')} à {event.heure}
+                              </p>
+                              <p className="mt-2 text-gray-700">{event.description}</p>
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleEditEvent(event)}
+                                className="text-blue-600 hover:text-blue-800 font-helvetica font-semibold"
+                              >
+                                Modifier
+                              </button>
+                              <button
+                                onClick={() => handleDeleteEvent(event.id)}
+                                className="text-red-500 hover:text-red-700 font-helvetica font-semibold"
+                              >
+                                Supprimer
+                              </button>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleEditEvent(event)}
-                            className="text-blue-600 hover:text-blue-800 font-helvetica font-semibold"
-                          >
-                            Modifier
-                          </button>
-                          <button
-                            onClick={() => handleDeleteEvent(event.id)}
-                            className="text-red-500 hover:text-red-700 font-helvetica font-semibold"
-                          >
-                            Supprimer
-                          </button>
-                        </div>
-                      </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </>
+                )}
               </div>
             </section>
           )}

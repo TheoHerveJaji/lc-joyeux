@@ -35,22 +35,30 @@ interface Category {
   name: string;
 }
 
+interface Side {
+  id: number;
+  description: string;
+  category: string;
+}
+
 export default function Home() {
   const [platDuJour, setPlatDuJour] = useState<PlatDuJourResponse | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [menuUrl, setMenuUrl] = useState<string | null>(null);
+  const [sides, setSides] = useState<Side[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const [platResponse, eventsResponse, categoriesResponse, menuResponse] = await Promise.all([
+        const [platResponse, eventsResponse, categoriesResponse, menuResponse, sidesResponse] = await Promise.all([
           fetch('/api/plat'),
           fetch('/api/events'),
           fetch('/api/categories'),
-          fetch('/api/menu')
+          fetch('/api/menu'),
+          fetch('/api/sides')
         ]);
 
         if (platResponse.ok) {
@@ -68,6 +76,10 @@ export default function Home() {
         if (menuResponse.ok) {
           const data = await menuResponse.json();
           setMenuUrl(data.url);
+        }
+        if (sidesResponse.ok) {
+          const data = await sidesResponse.json();
+          setSides(data);
         }
       } catch (error) {
         console.error('Erreur lors de la récupération des données:', error);
@@ -238,6 +250,33 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Section des sides */}
+      {sides.length > 0 && (
+        <section className="max-w-4xl mx-auto px-2 md:px-0 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {['salades', 'soupes', 'buns', 'croques'].map((category) => {
+              const categorySides = sides.filter(s => s.category === category);
+              if (categorySides.length === 0) return null;
+
+              return (
+                <div key={category} className="bg-white border-2 border-cafe-joyeux rounded-xl shadow-lg p-4">
+                  <h3 className="font-helvetica text-xl font-bold mb-3 capitalize">
+                    {category}
+                  </h3>
+                  <ul className="space-y-2">
+                    {categorySides.map((side) => (
+                      <li key={side.id} className="font-gotham text-gray-700">
+                        {side.description}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* Offres Section */}
       {events.length > 0 && (
