@@ -13,6 +13,7 @@ module.exports = {
       fontFamily: {
         'helvetica': ['Helvetica', 'Arial', 'sans-serif'],
         'gotham': ['Gotham', 'Arial', 'sans-serif'],
+        'amatic': ['var(--font-amatic)', 'cursive'],
       },
       animation: {
         'bounce-slow': 'bounce 3s infinite',

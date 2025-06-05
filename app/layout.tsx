@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Amatic_SC } from "next/font/google";
 import "./globals.css";
 import Navigation from "./components/Navigation";
 import { Providers } from "./providers";
 
 const inter = Inter({ subsets: ["latin"] });
+const amatic = Amatic_SC({ 
+  weight: ['400', '700'],
+  subsets: ["latin"],
+  variable: '--font-amatic',
+});
 
 export const metadata: Metadata = {
   title: "Le Café Joyeux - Plat du Jour",
@@ -21,7 +26,7 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/cafe-joyeux.svg" type="image/svg" />
       </head>
-      <body className={inter.className + " bg-white overflow-x-hidden min-h-screen flex flex-col"}>
+      <body className={`${inter.className} ${amatic.variable} bg-white overflow-x-hidden min-h-screen flex flex-col`}>
         <Providers>
           <Navigation />
           <div className="flex-1">
