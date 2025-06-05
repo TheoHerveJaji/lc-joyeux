@@ -15,6 +15,7 @@ interface Event {
 }
 
 interface PlatDuJour {
+  id: number;
   nom: string;
   date: string;
   updatedAt: string;
@@ -23,13 +24,19 @@ interface PlatDuJour {
   tags?: string[];
 }
 
+interface PlatDuJourResponse {
+  plats: PlatDuJour[];
+  date: string;
+  updatedAt: string;
+}
+
 interface Category {
   id: number;
   name: string;
 }
 
 export default function Home() {
-  const [platDuJour, setPlatDuJour] = useState<PlatDuJour | null>(null);
+  const [platDuJour, setPlatDuJour] = useState<PlatDuJourResponse | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [menuUrl, setMenuUrl] = useState<string | null>(null);
@@ -140,7 +147,7 @@ export default function Home() {
     );
   }
 
-  if (!platDuJour || !platDuJour.nom || !platDuJour.updatedAt) {
+  if (!platDuJour || !platDuJour.plats || platDuJour.plats.length === 0) {
     return (
       <main className="flex-1 flex items-center justify-center py-20">
         <div className="text-center space-y-4 px-4 max-w-lg mx-auto">
@@ -185,42 +192,49 @@ export default function Home() {
 
       {/* Card plat du jour */}
       <section className="max-w-4xl mx-auto px-2 md:px-0 mb-8">
-        <div className="bg-white border-2 border-cafe-joyeux rounded-xl shadow-lg p-4 md:p-10 flex flex-col md:flex-row gap-8 items-stretch">
-          <div className="flex flex-col gap-4 md:w-1/3">
-            {platDuJour.fileUrl ? (
-              <div className="aspect-square w-full rounded-xl bg-gray-200 overflow-hidden">
-                <Image 
-                  src={platDuJour.fileUrl} 
-                  alt={platDuJour.nom} 
-                  width={400} 
-                  height={400} 
-                  className="w-full h-full object-cover"
-                  priority
-                />
+        <div className="bg-white border-2 border-cafe-joyeux rounded-xl shadow-lg p-4 md:p-10">
+          <div className="flex flex-col gap-8">
+            {platDuJour.plats.map((plat, index) => (
+              <div key={plat.id || index}>
+                <div className="flex flex-col md:flex-row gap-8 items-stretch">
+                  {plat.fileUrl && (
+                    <div className="flex flex-col gap-4 md:w-1/3">
+                      <div className="aspect-square w-full rounded-xl bg-gray-200 overflow-hidden">
+                        <Image 
+                          src={plat.fileUrl} 
+                          alt={plat.nom} 
+                          width={400} 
+                          height={400} 
+                          className="w-full h-full object-cover"
+                          priority={index === 0}
+                        />
+                      </div>
+                    </div>
+                  )}
+                  <div className={`flex-1 flex flex-col justify-center gap-2 ${!plat.fileUrl ? 'md:w-full' : ''}`}>
+                    <h3 className="font-helvetica text-2xl font-bold text-gray-900 mb-1">{plat.nom}</h3>
+                    <p className="font-gotham text-gray-700 mb-3">{plat.description}</p>
+                    <div className="flex gap-2 mb-3 flex-wrap">
+                      {(plat.tags || []).map((tag: string, i: number) => (
+                        <span 
+                          key={i} 
+                          className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                            tag === 'Végétarien' ? 'bg-green-100 text-green-800' : 
+                            tag === 'Sans gluten' ? 'bg-yellow-100 text-yellow-800' : 
+                            'bg-gray-100 text-gray-700'
+                          }`}
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                {index < platDuJour.plats.length - 1 && (
+                  <div className="border-b border-gray-200 my-8" />
+                )}
               </div>
-            ) : (
-              <div className="aspect-square w-full rounded-xl bg-gray-100 flex items-center justify-center">
-                <span className="text-6xl animate-bounce-slow">🍽️</span>
-              </div>
-            )}
-          </div>
-          <div className="flex-1 flex flex-col justify-center gap-2">
-            <h3 className="font-helvetica text-2xl font-bold text-gray-900 mb-1">{platDuJour.nom}</h3>
-            <p className="font-gotham text-gray-700 mb-3">{platDuJour.description}</p>
-            <div className="flex gap-2 mb-3 flex-wrap">
-              {(platDuJour.tags || []).map((tag: string, i: number) => (
-                <span 
-                  key={i} 
-                  className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                    tag === 'Végétarien' ? 'bg-green-100 text-green-800' : 
-                    tag === 'Sans gluten' ? 'bg-yellow-100 text-yellow-800' : 
-                    'bg-gray-100 text-gray-700'
-                  }`}
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
+            ))}
           </div>
         </div>
       </section>
