@@ -294,19 +294,19 @@ export default function Home() {
 
             <div className="grid md:grid-cols-2 gap-8 mb-8">
               {events.map((event) => (
-                <div key={event.id} className="bg-gradient-to-br from-white via-white to-yellow-100 rounded-xl shadow-2xl overflow-hidden hover:shadow-3xl transition-shadow flex flex-col md:flex-row items-stretch border-2 border-cafe-joyeux animate-pop">
+                <div key={event.id} className="bg-gradient-to-br from-white via-white to-yellow-100 rounded-xl shadow-2xl overflow-hidden hover:shadow-3xl transition-shadow flex flex-col border-2 border-cafe-joyeux animate-pop">
                   {event.fileUrl && (
-                    <div className="md:w-1/3 relative">
+                    <div className="w-full h-48 md:h-auto md:w-1/3 relative">
                       <Image
                         src={event.fileUrl}
                         alt={event.titre}
                         fill
-                        className="object-cover"
+                        className="object-contain"
                         sizes="(max-width: 768px) 100vw, 33vw"
                       />
                     </div>
                   )}
-                  <div className={`flex-1 p-6 flex flex-col justify-center ${!event.fileUrl ? 'md:w-full' : ''}`}>
+                  <div className={`flex-1 p-6 flex flex-col justify-center ${!event.fileUrl ? 'w-full' : ''}`}>
                     <div className="flex items-center gap-2 mb-2">
                       <Calendar className="w-5 h-5 text-cafe-joyeux" />
                       <span className="flex items-center gap-1 font-gotham font-medium text-sm bg-white px-3 py-1 rounded-full border border-cafe-joyeux">
@@ -332,7 +332,7 @@ export default function Home() {
         <section className="max-w-4xl mx-auto px-2 md:px-0 mb-16 pt-8">
           <div className="bg-white border-2 border-cafe-joyeux rounded-xl shadow-lg p-4 md:p-10">
             <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 mr-4">
                 <h2 className="font-helvetica text-2xl font-bold">Menu de la Semaine</h2>
                 <span className="text-2xl">📋</span>
               </div>
