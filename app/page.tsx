@@ -252,8 +252,26 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Section Quiches */}
+      {sides.filter(s => s.category === 'quiches').length > 0 && (
+        <section className="max-w-4xl mx-auto px-2 md:px-0 mb-8">
+          <div className="bg-white border-2 border-cafe-joyeux rounded-xl shadow-lg p-4 md:p-6">
+            <h3 className="font-helvetica text-2xl font-bold mb-4">
+              Quiches
+            </h3>
+            <ul className="space-y-2">
+              {sides.filter(s => s.category === 'quiches').map((side) => (
+                <li key={side.id} className="font-gotham text-gray-700 text-lg">
+                  {side.description}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
+
       {/* Section des sides */}
-      {sides.length > 0 && (
+      {sides.filter(s => ['salades', 'soupes', 'buns', 'croques'].includes(s.category)).length > 0 && (
         <section className="max-w-4xl mx-auto px-2 md:px-0 mb-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {['salades', 'soupes', 'buns', 'croques'].map((category) => {
