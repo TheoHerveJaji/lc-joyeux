@@ -1039,6 +1039,7 @@ export default function AdminPage() {
                     <option value="soupes">Soupes</option>
                     <option value="buns">Buns</option>
                     <option value="croques">Croques</option>
+                    <option value="quiches">Quiches</option>
                   </select>
                 </div>
                 <div>
@@ -1087,7 +1088,7 @@ export default function AdminPage() {
                 {sides.length > 0 && (
                   <h3 className="font-helvetica text-xl font-bold mb-4">Liste des Sides</h3>
                 )}
-                {['salades', 'soupes', 'buns', 'croques'].map((category) => {
+                {['salades', 'soupes', 'buns', 'croques', 'quiches'].map((category) => {
                   const categorySides = sides.filter(s => s.category === category);
                   if (categorySides.length === 0) return null;
 
